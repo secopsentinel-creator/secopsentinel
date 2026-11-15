@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bitácora · Software y servicios</title>
+<title>Bitácora · Sistema Inteligente de Apoyo a la Investigación Judicial</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -23,6 +23,8 @@
     color: var(--text);
     line-height: 1.6;
   }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
   header {
     padding: 2.5rem 1.5rem 1.5rem;
     border-bottom: 1px solid var(--border);
@@ -30,12 +32,23 @@
   header h1 { margin: 0 0 .35rem; font-size: 1.8rem; }
   header p { margin: 0; color: var(--muted); }
   main { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
+  section { margin-bottom: 2.75rem; }
   h2 {
     font-size: 1.1rem;
     border-left: 4px solid var(--accent);
     padding-left: .65rem;
     margin: 0 0 1rem;
   }
+  h3 { font-size: 1.02rem; margin: 1.25rem 0 .5rem; }
+  h4 {
+    font-size: .78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin: 1rem 0 .35rem;
+  }
+  ul, ol { margin: .4rem 0 .8rem; padding-left: 1.35rem; }
+  li { margin: .2rem 0; }
   table { width: 100%; border-collapse: collapse; font-size: .9rem; }
   th, td { text-align: left; padding: .6rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
   th { color: var(--muted); font-weight: 600; font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; }
@@ -50,18 +63,809 @@
   }
   .ok { color: var(--green); border: 1px solid var(--green); }
   .parcial { color: var(--warn); border: 1px solid var(--warn); }
+  .callout {
+    background: #0f2417;
+    border: 1px solid var(--green);
+    border-left: 4px solid var(--green);
+    border-radius: 8px;
+    padding: 1.1rem 1.35rem;
+    margin: 1.5rem 0;
+  }
+  .callout h3 { margin-top: 0; color: var(--green); }
+  .callout p:last-child { margin-bottom: 0; }
+  .index {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+  .index ol { columns: 2 280px; margin: .25rem 0 0; }
+  .module {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .module h3 { margin-top: 0; }
+  .module p { margin: .35rem 0; }
+  .module ul { margin-bottom: .25rem; }
+  .phase { border-left: 3px solid var(--accent); }
+  .phase.mvp { border-left-color: var(--green); }
+  .when {
+    color: var(--muted);
+    font-size: .74rem;
+    font-weight: 400;
+    margin-left: .4rem;
+    white-space: nowrap;
+  }
+  .tag {
+    display: inline-block;
+    font-size: .68rem;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: .02rem .5rem;
+    margin-left: .4rem;
+    vertical-align: middle;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: .6rem;
+    margin: .6rem 0 1rem;
+  }
+  .chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .45rem .65rem;
+    font-size: .84rem;
+  }
+  .chip strong { display: block; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+  pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .8rem 1rem;
+    overflow: auto;
+    font-size: .82rem;
+    line-height: 1.5;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .flow { counter-reset: step; list-style: none; padding-left: 0; }
+  .flow li {
+    position: relative;
+    padding: .55rem 0 .55rem 2.4rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  .flow li:last-child { border-bottom: 0; }
+  .flow li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: .5rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 2rem 1rem; border-top: 1px solid var(--border); }
 </style>
 </head>
 <body>
 <header>
-  <h1>Bitácora · Software y servicios</h1>
-  <p>Datos verificados el 13 de noviembre de 2026</p>
+  <h1>Bitácora · Sistema Inteligente de Apoyo a la Investigación Judicial y Contratación Estatal</h1>
+  <p>Documentación técnica y funcional del proyecto · Actualizado el 14 de noviembre de 2026</p>
 </header>
 
 <main>
-  <section>
+  <section id="automatizacion">
+    <div class="callout">
+      <h3>Servicios de automatización: gratis y sin tokens de pago</h3>
+      <p>Los servicios de automatización del proyecto son <strong>gratuitos</strong> y <strong>no dependen de tokens por pago</strong>. Toda la inteligencia y la automatización se ejecuta con <strong>herramientas locales</strong> instaladas en el propio equipo:</p>
+      <ul>
+        <li><strong>IA local:</strong> Ollama con modelos abiertos (Llama 3.2 Vision, Qwen 2.5, DeepSeek). Sin APIs de pago ni facturación por consulta.</li>
+        <li><strong>OCR local:</strong> PaddleOCR y Tesseract para leer denuncias escaneadas y documentos PDF.</li>
+        <li><strong>Automatización web:</strong> Playwright para navegar y descargar expedientes de SECOP II.</li>
+        <li><strong>Búsqueda documental:</strong> ChromaDB y Qdrant para indexar y relacionar documentos.</li>
+        <li><strong>Base de datos:</strong> PostgreSQL local como almacenamiento del sistema.</li>
+      </ul>
+      <p>Consecuencias directas: <strong>costo cero en licencias y tokens</strong>, funcionamiento <strong>sin conexión a internet</strong> (salvo la consulta de portales públicos como SECOP II), <strong>privacidad total</strong> de la información judicial —los documentos no salen del equipo— y <strong>escalabilidad sin facturación por uso</strong>. El único costo asociado es el hardware y el consumo eléctrico.</p>
+    </div>
+  </section>
+
+  <section id="indice">
+    <h2>Índice del documento</h2>
+    <div class="index">
+      <ol>
+        <li><a href="#automatizacion">Servicios de automatización gratuitos y locales</a></li>
+        <li><a href="#proyecto">Proyecto y objetivo general</a></li>
+        <li><a href="#flujo">Flujo técnico: leer denuncia, alertar delitos, seguir y automatizar</a></li>
+        <li><a href="#modulos">Módulos funcionales (1 a 18)</a></li>
+        <li><a href="#arquitectura">Arquitectura tecnológica recomendada</a></li>
+        <li><a href="#resultado">Resultado esperado</a></li>
+        <li><a href="#plan">Plan de ejecución (fases 0 a 7)</a></li>
+        <li><a href="#verificados">Software y servicios verificados</a></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="proyecto">
+    <h2>Proyecto</h2>
+    <p><strong>Sistema Inteligente de Apoyo a la Investigación Judicial y Contratación Estatal</strong></p>
+    <h3>Objetivo general</h3>
+    <p>Desarrollar una plataforma web apoyada con Inteligencia Artificial que permita gestionar noticias criminales, analizar documentos, controlar actividades investigativas, automatizar la elaboración de documentos de Policía Judicial e identificar relaciones entre investigaciones, reduciendo significativamente el tiempo de análisis y elaboración de productos investigativos.</p>
+  </section>
+
+  <section id="flujo">
+    <h2>Flujo técnico</h2>
+    <p>El núcleo técnico del proyecto es leer el documento de denuncia, alimentar el proyecto con esa información, detectar alertas de delitos, hacer seguimiento a los procesos y automatizar las tareas asociadas. El flujo es el siguiente:</p>
+    <ol class="flow">
+      <li><strong>Ingesta del documento de denuncia:</strong> carga de PDF, imagen o documento de texto. El OCR local (PaddleOCR / Tesseract) extrae el contenido cuando el archivo es escaneado.</li>
+      <li><strong>Extracción de datos:</strong> la IA local identifica personas, identificaciones, entidades, contratos, delitos, fechas y documentos anexos.</li>
+      <li><strong>Alimentación del proyecto:</strong> se crea o actualiza el registro de la OT/NUNC, el expediente digital, la base de datos y el Excel maestro de control investigativo.</li>
+      <li><strong>Detección de alertas de delitos:</strong> análisis jurídico inicial, posibles conductas punibles, irregularidades contractuales y señales de riesgo.</li>
+      <li><strong>Seguimiento de procesos:</strong> control de términos, actividades investigativas, oficios enviados y pendientes, respuestas recibidas y estados de gestión.</li>
+      <li><strong>Automatización:</strong> generación de oficios, entrevistas e informes; descarga de documentos de SECOP II con Playwright; actualización automática del Excel y del dashboard.</li>
+      <li><strong>Indexación documental:</strong> los documentos se indexan en ChromaDB/Qdrant para búsqueda semántica, relación automática entre casos y consultas tipo Copilot.</li>
+    </ol>
+  </section>
+
+  <section id="modulos">
+    <h2>Módulos funcionales</h2>
+
+    <article class="module" id="mod1">
+      <h3>Módulo 1 · Gestión de Noticias Criminales</h3>
+      <h4>Datos de identificación</h4>
+      <ul>
+        <li>NUNC (Número de noticia criminal)</li>
+        <li>OT</li>
+        <li>OPJ</li>
+        <li>Fecha de asignación</li>
+        <li>Fecha de vencimiento</li>
+        <li>Estado</li>
+        <li>Prioridad</li>
+      </ul>
+      <h4>Información despacho</h4>
+      <ul>
+        <li>Fiscalía</li>
+        <li>Número del despacho</li>
+        <li>Fiscal asignado</li>
+        <li>Correo electrónico</li>
+        <li>Teléfono</li>
+      </ul>
+      <h4>Información investigador</h4>
+      <ul>
+        <li>Investigador asignado</li>
+        <li>Grupo CTI</li>
+        <li>Estado de gestión</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod2">
+      <h3>Módulo 2 · Extracción Inteligente de Datos</h3>
+      <p>Documentos que se cargan: denuncia, OPJ, programa metodológico, oficios, respuestas, informes, contratos y documentos SECOP.</p>
+      <p>La IA extrae automáticamente:</p>
+      <h4>Personas</h4>
+      <ul>
+        <li>Denunciante</li>
+        <li>Denunciado</li>
+        <li>Testigos</li>
+        <li>Funcionarios públicos</li>
+        <li>Contratistas</li>
+        <li>Supervisores</li>
+        <li>Interventores</li>
+      </ul>
+      <h4>Información personal</h4>
+      <ul>
+        <li>Nombre</li>
+        <li>Identificación</li>
+        <li>Correo</li>
+        <li>Teléfono</li>
+        <li>Dirección</li>
+      </ul>
+      <h4>Información penal</h4>
+      <ul>
+        <li>Delito principal</li>
+        <li>Delitos asociados</li>
+        <li>Artículo del Código Penal</li>
+        <li>Entidad afectada</li>
+      </ul>
+      <h4>Información contractual</h4>
+      <ul>
+        <li>Número de contrato</li>
+        <li>Proceso SECOP</li>
+        <li>Cuantía</li>
+        <li>Entidad contratante</li>
+        <li>Contratista</li>
+        <li>Supervisor</li>
+        <li>Interventor</li>
+        <li>Fecha de firma</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod3">
+      <h3>Módulo 3 · Resumen Automático de Denuncias</h3>
+      <p>Botón: <strong>Analizar denuncia</strong>. La IA genera automáticamente un resumen ejecutivo con:</p>
+      <ul>
+        <li>Hechos principales</li>
+        <li>Personas involucradas</li>
+        <li>Entidades involucradas</li>
+        <li>Documentos anexos</li>
+        <li>Contratos relacionados</li>
+        <li>Línea de tiempo</li>
+        <li>Posibles irregularidades</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod4">
+      <h3>Módulo 4 · Análisis Jurídico Inicial</h3>
+      <p>La IA identifica automáticamente posibles conductas relacionadas con:</p>
+      <h4>Administración Pública</h4>
+      <ul>
+        <li>Interés indebido en la celebración de contratos</li>
+        <li>Contrato sin cumplimiento de requisitos legales</li>
+        <li>Violación del régimen de inhabilidades</li>
+        <li>Peculado</li>
+        <li>Cohecho</li>
+        <li>Concusión</li>
+        <li>Tráfico de influencias</li>
+        <li>Prevaricato</li>
+        <li>Celebración indebida de contratos</li>
+      </ul>
+      <h4>Contratación estatal</h4>
+      <ul>
+        <li>Ley 80 de 1993</li>
+        <li>Ley 1150 de 2007</li>
+        <li>Ley 1474 de 2011</li>
+        <li>Ley 1882 de 2018</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod5">
+      <h3>Módulo 5 · Generador Inteligente de Oficios <span class="tag">Prioritario</span></h3>
+      <h4>Entidades de solicitud</h4>
+      <ul>
+        <li>DIAN</li>
+        <li>Procuraduría</li>
+        <li>Contraloría</li>
+        <li>Registraduría</li>
+        <li>Policía Nacional</li>
+        <li>Ejército Nacional</li>
+        <li>Ministerio de Salud</li>
+        <li>ANM</li>
+        <li>Alcaldías</li>
+        <li>Gobernaciones</li>
+        <li>Superintendencias</li>
+      </ul>
+      <p>La IA analiza la OPJ y propone: entidad a oficiar, qué solicitar, texto completo del oficio, correo destino y datos de contacto.</p>
+    </article>
+
+    <article class="module" id="mod6">
+      <h3>Módulo 6 · Base de Datos de Entidades</h3>
+      <p>Directorio actualizado con:</p>
+      <ul>
+        <li>Nombre entidad</li>
+        <li>Dependencia</li>
+        <li>Correo judicial</li>
+        <li>Correo PQR</li>
+        <li>Teléfono</li>
+        <li>Dirección</li>
+        <li>Tiempo promedio de respuesta</li>
+      </ul>
+      <table>
+        <thead>
+          <tr><th>Entidad</th><th>Correo</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Procuraduría</td><td><code>procesosjudiciales@procuraduria.gov.co</code></td></tr>
+          <tr><td>Contraloría</td><td><code>notificacionesramajudicial@contraloria.gov.co</code></td></tr>
+          <tr><td>ANM</td><td><code>contactenos@anm.gov.co</code></td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="module" id="mod7">
+      <h3>Módulo 7 · Descargador Automático SECOP II <span class="tag">Prioridad alta</span></h3>
+      <p>Mediante automatización web con Playwright, Selenium o Puppeteer. El usuario ingresa número de contrato, SECOP, entidad y NIT; el sistema descarga:</p>
+      <ul>
+        <li>Estudios previos</li>
+        <li>Análisis del sector</li>
+        <li>Pliegos</li>
+        <li>Adendas</li>
+        <li>Observaciones</li>
+        <li>Respuestas</li>
+        <li>Evaluaciones</li>
+        <li>Contrato</li>
+        <li>Pólizas</li>
+        <li>Actas</li>
+        <li>Informes de supervisión</li>
+        <li>Liquidación</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod8">
+      <h3>Módulo 8 · Organizador de Expedientes</h3>
+      <p>Cada noticia criminal tendrá una carpeta digital con la siguiente estructura:</p>
+      <pre><code>NUNC
+|
+|-- Denuncia
+|-- OPJ
+|-- Programa metodológico
+|-- Oficios
+|-- Respuestas
+|-- Entrevistas
+|-- Informes
+|-- SECOP
+|-- EMP
+|-- EF</code></pre>
+    </article>
+
+    <article class="module" id="mod9">
+      <h3>Módulo 9 · Generador de Entrevistas</h3>
+      <p>Botón: <strong>Crear cuestionario</strong>. La IA analiza la denuncia, el delito y la OPJ, y genera entrevistas para:</p>
+      <ul>
+        <li>Denunciante</li>
+        <li>Testigo</li>
+        <li>Contratista</li>
+        <li>Supervisor</li>
+        <li>Interventor</li>
+        <li>Servidor público</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod10">
+      <h3>Módulo 10 · Generador de Informes</h3>
+      <p>La IA elabora automáticamente, siguiendo exactamente los formatos institucionales que utilice el investigador:</p>
+      <ul>
+        <li>Informe de actividad</li>
+        <li>Informe de respuesta</li>
+        <li>Informe ejecutivo</li>
+        <li>Informe de análisis documental</li>
+        <li>Informe final</li>
+        <li>Informe para archivo</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod11">
+      <h3>Módulo 11 · Programa Metodológico Inteligente</h3>
+      <p>La IA analiza la denuncia, la OPJ y el delito, y propone:</p>
+      <ul>
+        <li>Objetivos investigativos</li>
+        <li>Actividades sugeridas</li>
+        <li>Priorización</li>
+        <li>EMP y EF necesarios</li>
+        <li>Entidades a consultar</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod12">
+      <h3>Módulo 12 · Relación Automática Entre Casos</h3>
+      <p>Comparación de nombres, empresas, contratos, correos, teléfonos, cédulas y NIT. El sistema alerta, por ejemplo: <em>“Existen 5 noticias criminales relacionadas.”</em></p>
+    </article>
+
+    <article class="module" id="mod13">
+      <h3>Módulo 13 · Motor de Búsqueda Investigativa</h3>
+      <p>Búsqueda tipo Copilot. Ejemplos:</p>
+      <ul>
+        <li>Mostrar denuncias relacionadas con la UNGRD</li>
+        <li>Buscar casos donde aparezca un contratista</li>
+        <li>Buscar todos los procesos de una alcaldía</li>
+        <li>Buscar noticias por delito</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod14">
+      <h3>Módulo 14 · Sugerencia Automática de Actividades</h3>
+      <p>Al analizar una denuncia la IA recomienda qué hacer:</p>
+      <ul>
+        <li>Solicitar expediente contractual</li>
+        <li>Entrevistar denunciante</li>
+        <li>Consultar SECOP</li>
+        <li>Solicitar Cámara de Comercio</li>
+        <li>Solicitar antecedentes</li>
+        <li>Solicitar informes de supervisión</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod15">
+      <h3>Módulo 15 · Apoyo a Decisiones del Fiscal</h3>
+      <p>La IA genera:</p>
+      <ul>
+        <li>Elementos para continuar</li>
+        <li>Elementos para archivo</li>
+        <li>Actividades faltantes</li>
+        <li>Riesgos probatorios</li>
+      </ul>
+      <p>Sin tomar decisiones por el fiscal, pero aportando criterios objetivos.</p>
+    </article>
+
+    <article class="module" id="mod16">
+      <h3>Módulo 16 · Dashboard Gerencial</h3>
+      <h4>Productividad</h4>
+      <ul>
+        <li>OT asignadas</li>
+        <li>OT vencidas</li>
+        <li>OT cerradas</li>
+        <li>Informes entregados</li>
+      </ul>
+      <h4>Gestión</h4>
+      <ul>
+        <li>Oficios enviados</li>
+        <li>Oficios pendientes</li>
+        <li>Respuestas recibidas</li>
+      </ul>
+      <h4>Estadísticas</h4>
+      <ul>
+        <li>Casos por delito</li>
+        <li>Casos por fiscal</li>
+        <li>Casos por entidad</li>
+        <li>Casos por municipio</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod17">
+      <h3>Módulo 17 · Copilot Investigativo <span class="tag">Corazón del proyecto</span></h3>
+      <p>Asistente conversacional especializado. Ejemplos de uso:</p>
+      <ul>
+        <li>“Resume la denuncia.”</li>
+        <li>“¿Qué debo hacer según la OPJ?”</li>
+        <li>“Genera el oficio para la Contraloría.”</li>
+        <li>“Haz el informe de actividad.”</li>
+        <li>“¿Qué delito podría configurarse?”</li>
+        <li>“¿Qué documentos faltan?”</li>
+        <li>“¿Qué entidades debo oficiar?”</li>
+        <li>“¿Hay mérito para continuar investigando?”</li>
+      </ul>
+    </article>
+
+    <article class="module" id="mod18">
+      <h3>Módulo 18 · Generación Automática de Excel de Control Investigativo</h3>
+      <p>Cada vez que se ingresa una nueva OT o se cargan una denuncia y una OPJ, el sistema crea el registro, extrae los datos principales, actualiza el Excel maestro, alimenta las estadísticas y crea relaciones automáticas entre procesos.</p>
+      <table>
+        <thead>
+          <tr><th>Hoja</th><th>Contenido y campos</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="name">1 · Control General de OT</td>
+            <td>OT, NUNC, SPOA, OPJ, delito, artículo, fiscal, despacho, investigador, fecha de asignación, fecha de vencimiento, días restantes, estado, prioridad, municipio y departamento.</td>
+          </tr>
+          <tr>
+            <td class="name">2 · Denunciantes</td>
+            <td>Documento, nombre, teléfono, correo y casos asociados. Permite identificar, por ejemplo, un denunciante presente en 5 noticias criminales.</td>
+          </tr>
+          <tr>
+            <td class="name">3 · Denunciados</td>
+            <td>Documento, nombre, cargo, entidad y casos. El sistema alerta, por ejemplo, que un denunciado aparece en 8 procesos.</td>
+          </tr>
+          <tr>
+            <td class="name">4 · Empresas Relacionadas</td>
+            <td>NIT, empresa, casos y contratos (uniones temporales, consorcios, SAS y entidades públicas).</td>
+          </tr>
+          <tr>
+            <td class="name">5 · Contratos Relacionados</td>
+            <td>Contrato, entidad, contratista, valor y casos. La IA extrae número de contrato, SECOP, cuantía, contratista, supervisor e interventor.</td>
+          </tr>
+          <tr>
+            <td class="name">6 · Entidades Investigadas</td>
+            <td>Entidad, casos y delitos (alcaldías, gobernaciones, ministerios, ANM, UNGRD, Policía Nacional, entre otras).</td>
+          </tr>
+          <tr>
+            <td class="name">7 · Actividades Investigativas</td>
+            <td>OT, actividad, fecha y estado (oficio enviado, entrevista realizada, solicitud SECOP, reiteración, informe entregado).</td>
+          </tr>
+          <tr>
+            <td class="name">8 · Alertas</td>
+            <td>Generación automática de próximas OT a vencer, oficios sin respuesta, entrevistas pendientes y actividades atrasadas.</td>
+          </tr>
+          <tr>
+            <td class="name">9 · Relaciones Automáticas</td>
+            <td>Coincidencias entre personas, empresas, contratos, fiscales y noticias. Ejemplo: OT 4587 y OT 7623 comparten el mismo denunciado; OT 4587 y OT 8012 el mismo contrato; OT 4587 y OT 9011 el mismo contratista.</td>
+          </tr>
+          <tr>
+            <td class="name">10 · Análisis de Riesgo</td>
+            <td>Contratación: único oferente, adiciones superiores al 50 %, contratos repetidos y contratistas recurrentes. Administración pública: servidores públicos reiterados, entidades recurrentes y delitos recurrentes.</td>
+          </tr>
+          <tr>
+            <td class="name">11 · Base de Correos Institucionales</td>
+            <td>Entidad, dependencia y correo (Procuraduría, Contraloría, DIAN, Registraduría, ANM, Policía Nacional, etc.). Al solicitar “Elaborar oficio”, la IA busca automáticamente el destinatario.</td>
+          </tr>
+          <tr>
+            <td class="name">12 · Indicadores Gerenciales</td>
+            <td>Gráficas automáticas: casos por delito, fiscal, entidad, contratista, municipio y departamento.</td>
+          </tr>
+        </tbody>
+      </table>
+      <h4>Funcionalidad más valiosa</h4>
+      <ol class="flow">
+        <li>La IA analiza denuncia, OPJ y documentos anexos.</li>
+        <li>Extrae denunciante, denunciados, entidades, contratos, delitos y testigos.</li>
+        <li>Actualiza automáticamente el Excel.</li>
+        <li>Busca coincidencias con todas las OT existentes.</li>
+        <li>Genera alertas: el denunciado ya aparece en 4 investigaciones; el contrato ya fue mencionado en otra noticia criminal; la empresa registra 7 investigaciones relacionadas; existe otra OT asignada a un fiscal diferente sobre el mismo contratista.</li>
+      </ol>
+    </article>
+  </section>
+
+  <section id="arquitectura">
+    <h2>Arquitectura tecnológica recomendada</h2>
+    <div class="grid">
+      <div class="chip"><strong>Frontend</strong>React · Next.js</div>
+      <div class="chip"><strong>Backend</strong>Python · FastAPI</div>
+      <div class="chip"><strong>Base de datos</strong>PostgreSQL</div>
+      <div class="chip"><strong>IA local</strong>Ollama · Llama 3.2 Vision · Qwen 2.5 · DeepSeek</div>
+      <div class="chip"><strong>OCR</strong>PaddleOCR · Tesseract</div>
+      <div class="chip"><strong>Automatización</strong>Playwright</div>
+      <div class="chip"><strong>Búsqueda documental</strong>ChromaDB · Qdrant</div>
+      <div class="chip"><strong>Sistema operativo</strong>Linux Ubuntu Server</div>
+    </div>
+    <p>Toda esta arquitectura opera con <strong>herramientas locales y gratuitas</strong>: no requiere APIs de pago ni consumo de tokens facturados. SECOP II es la única fuente externa que requiere conexión a internet.</p>
+  </section>
+
+  <section id="resultado">
+    <h2>Resultado esperado</h2>
+    <p>Al final, el investigador únicamente cargaría la denuncia y la OPJ, y el sistema sería capaz de:</p>
+    <ol>
+      <li>Extraer los datos relevantes.</li>
+      <li>Resumir el caso.</li>
+      <li>Identificar posibles delitos.</li>
+      <li>Sugerir actividades investigativas.</li>
+      <li>Generar oficios.</li>
+      <li>Elaborar entrevistas.</li>
+      <li>Descargar documentos de SECOP.</li>
+      <li>Analizar contratos.</li>
+      <li>Elaborar informes.</li>
+      <li>Relacionar casos similares.</li>
+      <li>Controlar términos.</li>
+      <li>Servir como asistente virtual especializado en investigaciones de Administración Pública.</li>
+    </ol>
+    <p>Esta es la visión completa de la herramienta que se ajusta al trabajo diario como investigador del CTI en asuntos de contratación estatal y delitos contra la administración pública.</p>
+  </section>
+
+  <section id="plan">
+    <h2>Plan de ejecución</h2>
+    <p>Plan aprobado para construir la plataforma por hitos, con entregables verificables y sin dependencia de servicios de pago. El primer objetivo es poner en funcionamiento el flujo <strong>denuncia → extracción → alerta de delitos → seguimiento</strong>.</p>
+
+    <h3>Decisiones de arquitectura</h3>
+    <table>
+      <thead>
+        <tr><th>Decisión</th><th>Elección</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="name">Interfaz</td><td>FastAPI + Jinja2 + HTMX + CSS local (sin Node)</td></tr>
+        <tr><td class="name">Backend</td><td>Python 3.12 + FastAPI + Uvicorn</td></tr>
+        <tr><td class="name">Base de datos</td><td>MariaDB 10.4 existente en XAMPP</td></tr>
+        <tr><td class="name">IA</td><td>Ollama local con <code>gemma4:e4b</code> (visión y herramientas)</td></tr>
+        <tr><td class="name">Acceso</td><td><code>http://127.0.0.1:8000</code>, solo local</td></tr>
+        <tr><td class="name">Usuarios</td><td>Un solo investigador local</td></tr>
+        <tr><td class="name">Costo</td><td>$0 en tokens y licencias; todo se ejecuta en el equipo</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Estado verificado del entorno</h3>
+    <ul>
+      <li>Repositorio con solo <code>_fix/bitacora.html</code>; remoto GitHub configurado.</li>
+      <li>Python 3.12.3 y pip 26.3. Falta <code>ensurepip</code>: el entorno debe crearse con <code>virtualenv</code> o instalando <code>python3-venv</code>.</li>
+      <li>Ollama 0.40.14 activo con <code>gemma4:e4b</code> (visión, herramientas, 131k de contexto). No hay modelo de embeddings.</li>
+      <li>MariaDB 10.4.28 activa por socket Unix; se desconoce la contraseña de administración.</li>
+      <li>No hay Node, PostgreSQL, Docker, Nginx ni Tesseract. Sí hay <code>pdftotext</code>, LibreOffice y Chromium (snap).</li>
+      <li>Hardware: 8 núcleos, 15 GB de RAM y 193 GB libres. Suficiente para un modelo de 7.5B en cuantización Q4.</li>
+    </ul>
+
+    <h3>Estructura del proyecto</h3>
+    <pre><code>secopsentinel/
+├── _fix/bitacora.html
+├── app/
+│   ├── main.py, config.py, db.py, models.py, schemas.py
+│   ├── routers/        # casos, documentos, análisis, actividades,
+│   │                   # oficios, entidades, alertas, relaciones, búsqueda
+│   ├── services/       # ollama, extracción, ocr, resumen, jurídico,
+│   │                   # alertas, relaciones, documentos, excel, secop, search
+│   ├── prompts/        # prompts versionados por tarea
+│   ├── templates/      # base, dashboard, casos, parciales HTMX
+│   └── static/         # css, htmx.min.js, js propios
+├── migrations/         # Alembic
+├── scripts/            # run.sh, backup.sh, seed.py, worker.py
+├── tests/              # pytest + datos sintéticos
+├── requirements.txt, pyproject.toml, .gitignore, .htaccess
+└── data -&gt; fuera del repositorio</code></pre>
+    <p>Los datos sensibles se guardan fuera de <code>htdocs</code> para que Apache no los sirva: <code>.env</code> en <code>~/.config/secopsentinel/</code> (chmod 600); expedientes, exportaciones y respaldos en <code>~/.local/share/secopsentinel/</code>; logs en <code>~/.local/state/secopsentinel/</code>. Un <code>.htaccess</code> en la raíz deniega <code>.git</code>, <code>app</code>, <code>data</code> y <code>.env</code>, y permite solo <code>_fix/</code>.</p>
+
+    <h3>Modelo de datos</h3>
+    <p>Tablas principales: <code>cases</code>, <code>persons</code>, <code>case_persons</code>, <code>entities</code>, <code>contracts</code>, <code>documents</code>, <code>crimes</code>, <code>case_crimes</code>, <code>activities</code>, <code>offices</code>, <code>alerts</code>, <code>relationships</code>, <code>entity_directory</code>, <code>templates</code>, <code>jobs</code>, <code>audit_log</code> y <code>settings</code>.</p>
+    <ul>
+      <li><code>cases</code>: NUNC, OT, OPJ, SPOA, delito, fiscal, despacho, investigador, fechas, estado, prioridad, municipio y departamento.</li>
+      <li><code>documents</code>: ruta, nombre original, tipo, SHA-256, texto extraído, OCR usado y páginas.</li>
+      <li><code>jobs</code>: estado de los análisis de IA para que sobrevivan reinicios.</li>
+      <li>Índices FULLTEXT en texto documental y campos del caso; índices únicos en NUNC, OT, documento y NIT.</li>
+    </ul>
+
+    <h3>Fases de ejecución</h3>
+
+    <article class="module phase" id="fase0">
+      <h3>Fase 0 · Preparación <span class="when">0.5 a 1 día</span></h3>
+      <ul>
+        <li>Crear entorno Python (<code>venv</code> o <code>virtualenv</code>) e instalar FastAPI, Uvicorn, Jinja2, SQLAlchemy, PyMySQL, Alembic, httpx, pypdf, pdfplumber, openpyxl, python-docx, Pillow, pytest y ruff.</li>
+        <li>Crear la base <code>secopsentinel</code> y un usuario dedicado en MariaDB (requiere la contraseña de administración).</li>
+        <li>Configurar <code>.env</code>, directorios de datos, <code>.gitignore</code>, <code>.htaccess</code>, README y <code>AGENTS.md</code>.</li>
+        <li>Probar conexión a MariaDB y a Ollama; publicar la página inicial en <code>:8000</code>.</li>
+      </ul>
+      <h4>Aceptación</h4>
+      <p>Uvicorn responde, la base conecta, Ollama responde y el repositorio no expone datos ni secretos.</p>
+    </article>
+
+    <article class="module phase mvp" id="fase1">
+      <h3>Fase 1 · Núcleo de casos y expediente <span class="when">3 a 5 días</span></h3>
+      <p><strong>Módulos:</strong> 1, 8 y base del 18.</p>
+      <ul>
+        <li>CRUD de noticias criminales con todos los campos.</li>
+        <li>Creación automática de la carpeta del expediente por NUNC.</li>
+        <li>Carga de documentos con validación, hash, deduplicación y clasificación.</li>
+        <li>Actividades investigativas y línea de tiempo.</li>
+        <li>Dashboard inicial y exportación Excel base.</li>
+        <li>Interfaz con listado, detalle por pestañas y formularios HTMX.</li>
+      </ul>
+      <h4>Aceptación</h4>
+      <p>Crear un caso, cargar denuncia y OPJ, guardar los archivos en el expediente, controlar vencimientos y exportar el Excel.</p>
+    </article>
+
+    <article class="module phase mvp" id="fase2">
+      <h3>Fase 2 · Pipeline de denuncia y alertas <span class="when">1.5 a 2 semanas</span></h3>
+      <p><strong>Módulos:</strong> 2, 3, 4 y 14.</p>
+      <ul>
+        <li>Extracción de texto con <code>pdftotext</code>/pypdf; OCR con Tesseract o visión de <code>gemma4</code> para escaneados.</li>
+        <li>Clasificación documental y extracción estructurada con Ollama en JSON validado.</li>
+        <li>Poblado de personas, entidades, contratos, delitos y fechas.</li>
+        <li>Resumen ejecutivo, análisis jurídico inicial y posibles delitos con artículo y nivel de confianza.</li>
+        <li>Alertas de delitos y actividades sugeridas.</li>
+        <li>Pantalla de revisión humana obligatoria antes de guardar.</li>
+      </ul>
+      <h4>Aceptación</h4>
+      <p>Con una denuncia sintética, el sistema extrae datos, muestra el resumen, alerta posibles delitos con evidencia y permite confirmar o corregir.</p>
+    </article>
+
+    <article class="module phase mvp" id="fase3">
+      <h3>Fase 3 · Seguimiento y control <span class="when">1 semana</span></h3>
+      <p><strong>Módulos:</strong> 14, 15, 16 y 18.</p>
+      <ul>
+        <li>Motor de reglas: términos a 7/3/1 días, oficios sin respuesta, documentos faltantes y actividades vencidas.</li>
+        <li>Centro de alertas y dashboard gerencial.</li>
+        <li>Excel completo con las 12 hojas.</li>
+        <li>Análisis de riesgo por contratación y administración pública.</li>
+      </ul>
+      <h4>Aceptación</h4>
+      <p>Las alertas se disparan en las fechas correctas, el dashboard coincide con la base y el Excel contiene las 12 hojas.</p>
+    </article>
+
+    <div class="callout">
+      <h3>Hito MVP</h3>
+      <p>Las fases 0 a 3 conforman el flujo <strong>denuncia → alerta → seguimiento</strong> funcionando de punta a punta.</p>
+    </div>
+
+    <article class="module phase" id="fase4">
+      <h3>Fase 4 · Documentos y entidades <span class="when">1.5 a 2 semanas</span></h3>
+      <p><strong>Módulos:</strong> 5, 6, 9, 10 y 11.</p>
+      <ul>
+        <li>Directorio de entidades con correos judiciales y PQR.</li>
+        <li>Generación de oficios: entidad propuesta, solicitud, texto, correo y contacto.</li>
+        <li>Exportación a DOCX y PDF; control de enviado y respondido.</li>
+        <li>Cuestionarios de entrevista, informes institucionales y programa metodológico.</li>
+        <li>Plantillas institucionales configurables.</li>
+      </ul>
+      <h4>Aceptación</h4>
+      <p>Generar un oficio para una entidad con destinatario correcto, exportarlo y registrar su seguimiento.</p>
+    </article>
+
+    <article class="module phase" id="fase5">
+      <h3>Fase 5 · SECOP II <span class="when">1.5 a 2 semanas</span></h3>
+      <p><strong>Módulo:</strong> 7.</p>
+      <ul>
+        <li>Playwright con Chromium local; búsqueda por contrato, SECOP, entidad o NIT.</li>
+        <li>Descarga de estudios previos, pliegos, contrato, pólizas, actas, informes y liquidación.</li>
+        <li>Guardado en <code>expediente/NUNC/SECOP</code>, manifiesto, deduplicación, reintentos y logs.</li>
+        <li>Intervención humana para captchas o sesiones; respeto de términos y límites del portal.</li>
+      </ul>
+      <h4>Aceptación</h4>
+      <p>Con un contrato público de prueba se descargan los documentos principales y queda el manifiesto de la descarga.</p>
+    </article>
+
+    <article class="module phase" id="fase6">
+      <h3>Fase 6 · Relaciones, búsqueda y Copilot <span class="when">2 a 3 semanas</span></h3>
+      <p><strong>Módulos:</strong> 12, 13, 15 y 17.</p>
+      <ul>
+        <li>Coincidencias exactas y difusas: cédulas, NIT, correos, teléfonos, contratos y nombres.</li>
+        <li>Alertas de casos relacionados.</li>
+        <li>Búsqueda FULLTEXT y luego semántica con ChromaDB + <code>nomic-embed-text</code>.</li>
+        <li>Copilot con herramientas: resumir, consultar casos, sugerir actividades y generar borradores, siempre citando documentos y páginas.</li>
+      </ul>
+      <h4>Aceptación</h4>
+      <p>El Copilot responde con fuentes locales, detecta casos relacionados y no usa APIs de pago.</p>
+    </article>
+
+    <article class="module phase" id="fase7">
+      <h3>Fase 7 · Endurecimiento y entrega <span class="when">1 semana</span></h3>
+      <ul>
+        <li>Pruebas unitarias e integrales, manejo de errores y logs.</li>
+        <li>Respaldos automáticos de base y expedientes; prueba de restauración.</li>
+        <li>Script de arranque único y servicio de usuario opcional.</li>
+        <li>Documentación de uso, instalación y mantenimiento.</li>
+      </ul>
+      <h4>Aceptación</h4>
+      <p>Instalación limpia desde el README, <code>pytest</code> en verde y respaldo/restauración verificados.</p>
+    </article>
+
+    <h3>Flujo técnico del MVP</h3>
+    <ol class="flow">
+      <li><strong>Cargar</strong> denuncia/OPJ: guardar archivo, calcular SHA-256 y crear el trabajo.</li>
+      <li><strong>Leer</strong>: PDF digital con <code>pdftotext</code>; escaneado con OCR o visión local.</li>
+      <li><strong>Extraer</strong>: Ollama devuelve JSON validado con personas, entidades, contratos, delitos y evidencia textual.</li>
+      <li><strong>Alimentar</strong>: se crea o actualiza el caso, el expediente, las personas, los contratos y el Excel.</li>
+      <li><strong>Alertar</strong>: reglas y análisis jurídico generan alertas de delitos, términos y documentos faltantes.</li>
+      <li><strong>Seguir</strong>: actividades, oficios, respuestas y vencimientos con estados.</li>
+      <li><strong>Automatizar</strong>: oficios, entrevistas, informes, descarga SECOP y exportaciones.</li>
+      <li><strong>Indexar</strong>: FULLTEXT y búsqueda semántica para relaciones y Copilot.</li>
+    </ol>
+
+    <h3>Reglas de IA</h3>
+    <ul>
+      <li>Ninguna llamada a APIs pagas; solo <code>127.0.0.1:11434</code>.</li>
+      <li>Temperatura baja y salida JSON con validación Pydantic y reintento de reparación.</li>
+      <li>Toda extracción debe citar documento y página o fragmento.</li>
+      <li>El investigador confirma antes de persistir; el sistema no decide por el fiscal.</li>
+      <li>Prompts versionados y registro de auditoría de cada análisis.</li>
+    </ul>
+
+    <h3>Seguridad y datos sensibles</h3>
+    <ul>
+      <li>Uvicorn solo en <code>127.0.0.1</code>, sin exposición a la red local.</li>
+      <li>Datos y secretos fuera de <code>htdocs</code>; <code>.htaccess</code> para denegar código y <code>.git</code>.</li>
+      <li>Validación de tipos y tamaños, nombres saneados y protección contra path traversal.</li>
+      <li>Auditoría de accesos y cambios; respaldos cifrados opcionales.</li>
+      <li>Sin telemetría ni envío de documentos al exterior.</li>
+    </ul>
+
+    <h3>Riesgos principales</h3>
+    <table>
+      <thead>
+        <tr><th>Riesgo</th><th>Mitigación</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>gemma4</code> 7.5B lento o impreciso</td><td>Un solo trabajo de IA a la vez, fragmentación, prompts estrictos y revisión humana.</td></tr>
+        <tr><td>Falta de modelo de embeddings</td><td>Usar FULLTEXT en el MVP; agregar <code>nomic-embed-text</code> en la Fase 6.</td></tr>
+        <tr><td>SECOP con captchas o cambios</td><td>Playwright con intervención humana, reintentos y selectores versionados.</td></tr>
+        <tr><td>Documentos escaneados sin OCR</td><td>Instalar Tesseract o usar la visión de <code>gemma4</code>.</td></tr>
+        <tr><td>Datos judiciales expuestos</td><td>Bind local, datos fuera del docroot, <code>.htaccess</code>, permisos 600 y respaldos.</td></tr>
+        <tr><td>Alcance de 18 módulos</td><td>Entregas por hitos: MVP primero y módulos posteriores.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Pendientes de confirmación antes de la Fase 0</h3>
+    <ol>
+      <li>Contraseña o usuario administrador de MariaDB para crear la base y el usuario dedicado.</li>
+      <li>Documentos de ejemplo desensibilizados (denuncia y OPJ) para calibrar los prompts.</li>
+      <li>Formatos institucionales de oficios e informes en DOCX.</li>
+      <li>Autorización para instalar Tesseract con <code>sudo</code> o preferencia por la visión de <code>gemma4</code>.</li>
+      <li>Autorización para descargar <code>nomic-embed-text</code> (~275 MB) y Chromium de Playwright (~150 MB).</li>
+      <li>¿Existe un Excel de control actual que deba importarse?</li>
+      <li>Contrato público de prueba para validar SECOP II.</li>
+    </ol>
+
+    <h3>Próximo paso</h3>
+    <p>Iniciar la <strong>Fase 0</strong>: preparación del entorno, base de datos, estructura del proyecto y prueba de humo con FastAPI + MariaDB + Ollama.</p>
+  </section>
+
+  <section id="verificados">
     <h2>Software y servicios verificados</h2>
+    <p>Datos verificados el 13 de noviembre de 2026.</p>
     <table>
       <thead>
         <tr>
@@ -99,7 +903,7 @@
         <tr>
           <td class="name">Ollama</td>
           <td class="ver">0.40.14</td>
-          <td>Servicio activo en <code>127.0.0.1:11434</code>; modelo disponible: <code>gemma4:e4b</code>.</td>
+          <td>Servicio activo en <code>127.0.0.1:11434</code>; modelo disponible: <code>gemma4:e4b</code>. Base de la IA local gratuita del proyecto.</td>
           <td><span class="estado ok">Verificado</span></td>
         </tr>
         <tr>
@@ -149,6 +953,6 @@
   </section>
 </main>
 
-<footer>Bitácora · Datos verificados en el equipo local</footer>
+<footer>Bitácora · Sistema Inteligente de Apoyo a la Investigación Judicial · Automatización local, gratuita y sin tokens de pago</footer>
 </body>
 </html>
