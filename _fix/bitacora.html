@@ -163,7 +163,7 @@
 <body>
 <header>
   <h1>Bitácora · Sistema Inteligente de Apoyo a la Investigación Judicial y Contratación Estatal</h1>
-  <p>Documentación técnica y funcional del proyecto · Actualizado el 14 de noviembre de 2026</p>
+  <p>Documentación técnica y funcional del proyecto · Actualizado el 15 de noviembre de 2026</p>
 </header>
 
 <main>
@@ -172,13 +172,13 @@
       <h3>Servicios de automatización: gratis y sin tokens de pago</h3>
       <p>Los servicios de automatización del proyecto son <strong>gratuitos</strong> y <strong>no dependen de tokens por pago</strong>. Toda la inteligencia y la automatización se ejecuta con <strong>herramientas locales</strong> instaladas en el propio equipo:</p>
       <ul>
-        <li><strong>IA local:</strong> Ollama con modelos abiertos (Llama 3.2 Vision, Qwen 2.5, DeepSeek). Sin APIs de pago ni facturación por consulta.</li>
-        <li><strong>OCR local:</strong> PaddleOCR y Tesseract para leer denuncias escaneadas y documentos PDF.</li>
-        <li><strong>Automatización web:</strong> Playwright para navegar y descargar expedientes de SECOP II.</li>
-        <li><strong>Búsqueda documental:</strong> ChromaDB y Qdrant para indexar y relacionar documentos.</li>
-        <li><strong>Base de datos:</strong> PostgreSQL local como almacenamiento del sistema.</li>
+        <li><strong>IA local:</strong> Ollama con modelos abiertos. Arquitectura vigente: <code>gemma4:e4b</code> para visión y herramientas, <code>qwen2.5:7b-instruct</code> para extracción de texto y <code>nomic-embed-text</code> para embeddings. Sin APIs de pago ni facturación por consulta.</li>
+        <li><strong>OCR local:</strong> Tesseract para español con respaldo de visión de <code>gemma4</code> en denuncias escaneadas y documentos PDF. PaddleOCR queda como alternativa evaluada, no adoptada en el MVP.</li>
+        <li><strong>Automatización web:</strong> Playwright con Chromium local para navegar y descargar expedientes de SECOP II.</li>
+        <li><strong>Búsqueda documental:</strong> ChromaDB para indexar y relacionar documentos. Qdrant queda como alternativa futura si crece el volumen.</li>
+        <li><strong>Base de datos:</strong> MariaDB 10.4 de XAMPP por socket Unix como almacenamiento del sistema. Los archivos originales no se guardan en la BD: la BD conserva rutas relativas, SHA-256 y metadatos.</li>
       </ul>
-      <p>Consecuencias directas: <strong>costo cero en licencias y tokens</strong>, funcionamiento <strong>sin conexión a internet</strong> (salvo la consulta de portales públicos como SECOP II), <strong>privacidad total</strong> de la información judicial —los documentos no salen del equipo— y <strong>escalabilidad sin facturación por uso</strong>. El único costo asociado es el hardware y el consumo eléctrico.</p>
+      <p>Consecuencias directas: <strong>costo cero en licencias y tokens</strong>, funcionamiento <strong>sin conexión a internet durante la operación</strong> (salvo la consulta de portales públicos como SECOP II), <strong>privacidad total</strong> de la información judicial —los documentos no salen del equipo— y <strong>escalabilidad sin facturación por uso</strong>. La conexión a internet solo se requiere para la instalación inicial, la descarga de modelos/OCR y la consulta de SECOP II. El único costo asociado es el hardware y el consumo eléctrico.</p>
     </div>
   </section>
 
@@ -191,8 +191,9 @@
         <li><a href="#flujo">Flujo técnico: leer denuncia, alertar delitos, seguir y automatizar</a></li>
         <li><a href="#modulos">Módulos funcionales (1 a 18)</a></li>
         <li><a href="#arquitectura">Arquitectura tecnológica recomendada</a></li>
+        <li><a href="#seguridad">Protección de seguridad y datos judiciales (transversal)</a></li>
         <li><a href="#resultado">Resultado esperado</a></li>
-        <li><a href="#plan">Plan de ejecución (fases 0 a 7)</a></li>
+        <li><a href="#plan">Plan de ejecución (fases 0 a 7 con gates de seguridad)</a></li>
         <li><a href="#verificados">Software y servicios verificados</a></li>
       </ol>
     </div>
@@ -209,13 +210,13 @@
     <h2>Flujo técnico</h2>
     <p>El núcleo técnico del proyecto es leer el documento de denuncia, alimentar el proyecto con esa información, detectar alertas de delitos, hacer seguimiento a los procesos y automatizar las tareas asociadas. El flujo es el siguiente:</p>
     <ol class="flow">
-      <li><strong>Ingesta del documento de denuncia:</strong> carga de PDF, imagen o documento de texto. El OCR local (PaddleOCR / Tesseract) extrae el contenido cuando el archivo es escaneado.</li>
+      <li><strong>Ingesta del documento de denuncia:</strong> carga de PDF, imagen o documento de texto. Se intenta primero la lectura nativa del PDF; si la página está escaneada, el OCR local (Tesseract para español, con respaldo de visión <code>gemma4</code>) extrae el contenido.</li>
       <li><strong>Extracción de datos:</strong> la IA local identifica personas, identificaciones, entidades, contratos, delitos, fechas y documentos anexos.</li>
-      <li><strong>Alimentación del proyecto:</strong> se crea o actualiza el registro de la OT/NUNC, el expediente digital, la base de datos y el Excel maestro de control investigativo.</li>
+      <li><strong>Alimentación del proyecto:</strong> se crea o actualiza el registro de la OT/NUNC, el expediente digital y la base de datos; el Excel de control investigativo se regenera como exportación.</li>
       <li><strong>Detección de alertas de delitos:</strong> análisis jurídico inicial, posibles conductas punibles, irregularidades contractuales y señales de riesgo.</li>
       <li><strong>Seguimiento de procesos:</strong> control de términos, actividades investigativas, oficios enviados y pendientes, respuestas recibidas y estados de gestión.</li>
-      <li><strong>Automatización:</strong> generación de oficios, entrevistas e informes; descarga de documentos de SECOP II con Playwright; actualización automática del Excel y del dashboard.</li>
-      <li><strong>Indexación documental:</strong> los documentos se indexan en ChromaDB/Qdrant para búsqueda semántica, relación automática entre casos y consultas tipo Copilot.</li>
+      <li><strong>Automatización:</strong> generación de oficios, entrevistas e informes; descarga de documentos de SECOP II con Playwright; actualización automática del dashboard y regeneración del Excel como exportación.</li>
+      <li><strong>Indexación documental:</strong> los documentos se indexan en ChromaDB con <code>nomic-embed-text</code> para búsqueda semántica, relación automática entre casos y consultas tipo Copilot. En el MVP la búsqueda es FULLTEXT en MariaDB.</li>
     </ol>
   </section>
 
@@ -375,7 +376,7 @@
 
     <article class="module" id="mod7">
       <h3>Módulo 7 · Descargador Automático SECOP II <span class="tag">Prioridad alta</span></h3>
-      <p>Mediante automatización web con Playwright, Selenium o Puppeteer. El usuario ingresa número de contrato, SECOP, entidad y NIT; el sistema descarga:</p>
+      <p>Mediante automatización web con Playwright y Chromium local. El usuario ingresa número de contrato, SECOP, entidad y NIT; el sistema descarga:</p>
       <ul>
         <li>Estudios previos</li>
         <li>Análisis del sector</li>
@@ -406,7 +407,9 @@
 |-- Informes
 |-- SECOP
 |-- EMP
-|-- EF</code></pre>
+|-- EF
+|-- _manifest.json</code></pre>
+      <p>Los archivos originales viven en el filesystem, fuera de <code>htdocs</code>. La base de datos guarda la ruta relativa, el SHA-256 y los metadatos del documento; no almacena el binario. El <code>_manifest.json</code> de cada expediente permite verificar integridad y reconstruir vínculos.</p>
     </article>
 
     <article class="module" id="mod9">
@@ -529,7 +532,8 @@
 
     <article class="module" id="mod18">
       <h3>Módulo 18 · Generación Automática de Excel de Control Investigativo</h3>
-      <p>Cada vez que se ingresa una nueva OT o se cargan una denuncia y una OPJ, el sistema crea el registro, extrae los datos principales, actualiza el Excel maestro, alimenta las estadísticas y crea relaciones automáticas entre procesos.</p>
+      <p>Cada vez que se ingresa una nueva OT o se cargan una denuncia y una OPJ, el sistema crea el registro, extrae los datos principales, actualiza el Excel de control, alimenta las estadísticas y crea relaciones automáticas entre procesos.</p>
+      <p><strong>La fuente de verdad es la base de datos.</strong> El Excel es una referencia válida, editable y la principal salida de exportación; no se usa como maestro operativo ni se sincroniza en dos vías. El Excel actual del investigador se importará una sola vez cuando esté disponible y servirá de base para la plantilla de exportación.</p>
       <table>
         <thead>
           <tr><th>Hoja</th><th>Contenido y campos</th></tr>
@@ -599,16 +603,239 @@
   <section id="arquitectura">
     <h2>Arquitectura tecnológica recomendada</h2>
     <div class="grid">
-      <div class="chip"><strong>Frontend</strong>React · Next.js</div>
-      <div class="chip"><strong>Backend</strong>Python · FastAPI</div>
-      <div class="chip"><strong>Base de datos</strong>PostgreSQL</div>
-      <div class="chip"><strong>IA local</strong>Ollama · Llama 3.2 Vision · Qwen 2.5 · DeepSeek</div>
-      <div class="chip"><strong>OCR</strong>PaddleOCR · Tesseract</div>
-      <div class="chip"><strong>Automatización</strong>Playwright</div>
-      <div class="chip"><strong>Búsqueda documental</strong>ChromaDB · Qdrant</div>
+      <div class="chip"><strong>Frontend</strong>Jinja2 · HTMX · CSS local (sin Node)</div>
+      <div class="chip"><strong>Backend</strong>Python 3.12 · FastAPI · Uvicorn</div>
+      <div class="chip"><strong>Base de datos</strong>MariaDB 10.4 · XAMPP · socket Unix</div>
+      <div class="chip"><strong>IA local</strong>Ollama · gemma4:e4b · Qwen 2.5 7B · nomic-embed-text</div>
+      <div class="chip"><strong>OCR</strong>Tesseract · visión gemma4 de respaldo</div>
+      <div class="chip"><strong>Automatización</strong>Playwright · Chromium local</div>
+      <div class="chip"><strong>Búsqueda documental</strong>FULLTEXT · ChromaDB (Fase 6)</div>
+      <div class="chip"><strong>Almacenamiento</strong>Filesystem fuera de htdocs · rutas en BD</div>
+      <div class="chip"><strong>PDF</strong>pdftotext · pypdf · pdfplumber · pdftoppm</div>
       <div class="chip"><strong>Sistema operativo</strong>Linux Ubuntu Server</div>
     </div>
-    <p>Toda esta arquitectura opera con <strong>herramientas locales y gratuitas</strong>: no requiere APIs de pago ni consumo de tokens facturados. SECOP II es la única fuente externa que requiere conexión a internet.</p>
+    <p>Esta es la <strong>arquitectura vigente</strong>. Las alternativas evaluadas (React/Next.js, PaddleOCR, Qdrant, Llama 3.2 Vision y DeepSeek) no se adoptan en el MVP. Toda la arquitectura opera con <strong>herramientas locales y gratuitas</strong>: no requiere APIs de pago ni consumo de tokens facturados. SECOP II es la única fuente externa que requiere conexión a internet durante la operación; la instalación y las descargas iniciales también requieren conexión.</p>
+  </section>
+
+  <section id="seguridad">
+    <h2>Protección de seguridad y datos judiciales (transversal)</h2>
+    <p>La seguridad es un <strong>requisito transversal</strong>: se aplica desde la Fase 0 y atraviesa ingesta, OCR, IA, almacenamiento, base de datos, exportaciones, SECOP y respaldos. No se trata como un módulo aislado ni se deja solo para el final. Una inspección de solo lectura del 15 de noviembre de 2026 encontró que Apache y FTP escuchan en todas las interfaces y que el disco raíz aún no tiene cifrado; ambos puntos deben corregirse antes de cargar datos reales.</p>
+
+    <h3>Hallazgos del equipo y riesgos prioritarios</h3>
+    <table>
+      <thead>
+        <tr><th>Hallazgo</th><th>Evidencia</th><th>Acción requerida</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="name">Apache expuesto en la red</td><td>Escucha en <code>*:80</code> y <code>*:443</code>.</td><td>Escuchar solo en <code>127.0.0.1</code> o bloquear en firewall antes de operar.</td></tr>
+        <tr><td class="name">FTP expuesto en la red</td><td>Escucha en <code>*:21</code>.</td><td>Deshabilitar si no es imprescindible; si se usa, restringir a loopback.</td></tr>
+        <tr><td class="name">mDNS/Avahi visible</td><td>Escucha en <code>*:5353</code>.</td><td>Evaluar deshabilitarlo si no se necesita descubrimiento en red.</td></tr>
+        <tr><td class="name">Servicios críticos en loopback</td><td>Ollama en <code>127.0.0.1:11434</code>, CUPS en <code>127.0.0.1:631</code>; MariaDB sin TCP.</td><td>Mantener y verificar que no se expongan al cambiar configuraciones.</td></tr>
+        <tr><td class="name">Disco sin cifrar</td><td>Raíz <code>/dev/nvme0n1p2</code> en ext4, sin LUKS; <code>cryptsetup</code> no instalado.</td><td>Crear un contenedor LUKS para datos y secretos antes de cargar información real.</td></tr>
+        <tr><td class="name">Antimalware y respaldos ausentes</td><td>ClamAV, restic y borg no instalados; sí existen <code>rsync</code> y <code>gpg</code>.</td><td>Instalar ClamAV y definir la herramienta de respaldo con el área de IT.</td></tr>
+        <tr><td class="name">Firewall no verificado</td><td>UFW está instalado, pero su estado requiere <code>root</code>.</td><td>Auditar reglas con <code>sudo</code> y dejar política por defecto de denegar entrada.</td></tr>
+        <tr><td class="name">Credenciales administrativas</td><td>Confirmadas por el usuario, no registradas en este documento.</td><td>Crear usuario dedicado, no usar <code>root</code> y rotar la clave administrativa.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Decisiones cerradas</h3>
+    <table>
+      <thead>
+        <tr><th>Tema</th><th>Decisión</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="name">Cifrado</td><td><strong>Datos cifrados</strong> mediante contenedor LUKS para los datos de la aplicación y los secretos. No se elige reinstalación de disco completo.</td></tr>
+        <tr><td class="name">Respaldos</td><td>Se enviarán a un <strong>segundo equipo con su propia seguridad</strong>. La herramienta y el equipo destino se definirán con el área de IT.</td></tr>
+        <tr><td class="name">Antimalware</td><td><strong>ClamAV autorizado</strong> para cargas y descargas de SECOP.</td></tr>
+        <tr><td class="name">Autenticación</td><td><strong>Solo contraseña por ahora</strong>. MFA/TOTP queda como mejora futura.</td></tr>
+        <tr><td class="name">Acceso</td><td><strong>Solo equipo local</strong>, con auditoría y ajuste de las políticas de firewall del equipo.</td></tr>
+        <tr><td class="name">Retención</td><td><strong>Pendiente de definir con el usuario cliente.</strong> El sistema la dejará configurable y auditable.</td></tr>
+        <tr><td class="name">Revisión legal</td><td><strong>La asume el usuario.</strong> El documento incluye checklist y registro de la revisión.</td></tr>
+        <tr><td class="name">Instalaciones</td><td><code>cryptsetup</code> y la herramienta de respaldo están <strong>autorizadas</strong>, pero <strong>no se ejecutan en esta documentación</strong>. Aquí solo se planifican.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Activos y clasificación</h3>
+    <ul>
+      <li><strong>Reservado:</strong> documentos originales, texto extraído, PII de denunciantes y denunciados, pruebas y expedientes.</li>
+      <li><strong>Confidencial:</strong> base de datos, auditoría, prompts, resultados de IA, exportaciones y respaldos.</li>
+      <li><strong>Interno:</strong> configuración, logs técnicos y métricas del sistema.</li>
+      <li><strong>Público:</strong> esta bitácora y documentación no sensible.</li>
+    </ul>
+
+    <h3>Modelo de amenazas</h3>
+    <table>
+      <thead>
+        <tr><th>Amenaza</th><th>Impacto</th><th>Control principal</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Acceso no autorizado al equipo o a la aplicación</td><td>Fuga de información judicial</td><td>Login obligatorio, bloqueo, sesión, firewall, cifrado</td></tr>
+        <tr><td>Robo o pérdida del equipo</td><td>Exposición de datos en reposo</td><td>Contenedor LUKS, bloqueo de pantalla, protección física</td></tr>
+        <tr><td>Path traversal o carga maliciosa</td><td>Lectura/escritura fuera del expediente o malware</td><td>Rutas relativas, validación, permisos, ClamAV, cuarentena</td></tr>
+        <tr><td>Inyección SQL</td><td>Alteración o extracción de datos</td><td>ORM parametrizado, usuario con mínimo privilegio</td></tr>
+        <tr><td>Prompt injection en documentos</td><td>Respuestas manipuladas o fuga de contexto</td><td>Contenido no confiable, JSON validado, allowlist, revisión humana</td></tr>
+        <tr><td>Robo de credenciales SECOP</td><td>Suplantación y descargas no autorizadas</td><td>Keyring, perfil aislado, sin credenciales en código ni logs</td></tr>
+        <tr><td>Fuga por exportaciones</td><td>PII compartida por error</td><td>Etiquetas de sensibilidad, registro, envío manual, cifrado</td></tr>
+        <tr><td>Respaldo perdido o no restaurable</td><td>Pérdida definitiva de casos</td><td>Cifrado, 3-2-1, RPO/RTO, prueba de restauración</td></tr>
+        <tr><td>Cadena de suministro</td><td>Paquete, modelo o navegador alterado</td><td>Versiones fijadas, <code>pip-audit</code>, checksums, fuentes oficiales</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Controles por capa</h3>
+
+    <h4>Cifrado de datos con LUKS</h4>
+    <ul>
+      <li><strong>Estado actual:</strong> disco raíz ext4 sin LUKS y <code>cryptsetup</code> no instalado.</li>
+      <li><strong>Decisión:</strong> contenedor LUKS para <code>~/.local/share/secopsentinel</code> y para los secretos. Mientras no haya cifrado de disco completo, los permisos 600 no protegen los datos si el disco se extrae.</li>
+      <li><strong>Plan:</strong> respaldar y verificar; instalar <code>cryptsetup</code>; crear el contenedor; formatear ext4; montar; migrar datos; actualizar <code>DATA_ROOT</code> y la ubicación de <code>.env</code>; probar la aplicación; guardar la cabecera LUKS y la clave de recuperación en un lugar seguro; documentar el desbloqueo y el montaje.</li>
+      <li><strong>Secretos:</strong> el <code>.env</code> debe residir dentro del volumen cifrado o cifrarse aparte con <code>age</code>/GPG. No se acepta una clave de desbloqueo en texto plano sobre el mismo disco.</li>
+      <li><strong>Riesgos:</strong> pérdida de la frase o de la clave de recuperación, corrupción del contenedor y error humano al migrar. Mitigación: respaldo verificado, clave de recuperación y prueba de restauración.</li>
+      <li><strong>Aceptación:</strong> <code>cryptsetup status</code> muestra el contenedor activo, no hay datos sensibles en texto plano y la aplicación funciona tras desbloquear el volumen.</li>
+    </ul>
+
+    <h4>Firewall y exposición de servicios</h4>
+    <ul>
+      <li><strong>Política:</strong> denegar entrada por defecto; permitir solo loopback; salida permitida a 443/80 para actualizaciones y SECOP, y SSH al equipo de respaldo.</li>
+      <li><strong>Apache:</strong> escuchar solo en <code>127.0.0.1:80</code> y <code>127.0.0.1:443</code>.</li>
+      <li><strong>FTP:</strong> deshabilitar el servicio en el puerto 21 si no es imprescindible; si se requiere, restringirlo a loopback.</li>
+      <li><strong>Uvicorn:</strong> <code>127.0.0.1:8000</code>. <strong>MariaDB:</strong> solo socket Unix. <strong>Ollama:</strong> <code>127.0.0.1:11434</code>. <strong>CUPS:</strong> loopback.</li>
+      <li><strong>mDNS/Avahi:</strong> evaluar su deshabilitación si no se usa descubrimiento en red.</li>
+      <li><strong>Auditoría:</strong> ejecutar con <code>sudo</code> <code>ufw status verbose</code>, <code>nft list ruleset</code>, <code>ss -tulpn</code> e <code>iptables -S</code>. Estas comprobaciones están documentadas, no ejecutadas en esta edición.</li>
+      <li><strong>Aceptación:</strong> <code>ss -tulpn</code> no muestra servicios sensibles en <code>0.0.0.0</code>; el firewall está activo; desde otro equipo de la LAN no se accede a la aplicación.</li>
+    </ul>
+
+    <h4>Autenticación y sesión</h4>
+    <ul>
+      <li>Login obligatorio de usuario único con contraseña Argon2id y mínimo 12 caracteres.</li>
+      <li>Bloqueo tras 5 intentos fallidos, expiración de sesión y logout real.</li>
+      <li>Cookie <code>HttpOnly</code>, <code>SameSite=Strict</code> y <code>Secure</code> cuando haya HTTPS.</li>
+      <li>Token CSRF en formularios HTMX y límite de intentos en login.</li>
+      <li>Sin MFA por ahora; se documenta como mejora futura.</li>
+      <li>Reset de contraseña por CLI y auditoría de accesos.</li>
+    </ul>
+
+    <h4>Secretos y base de datos</h4>
+    <ul>
+      <li><code>.env</code> con permisos 600 dentro del volumen cifrado; <code>.env.example</code> sin valores reales.</li>
+      <li><code>gitleaks</code> o <code>git-secrets</code> como pre-commit; ningún secreto en el repositorio ni en la bitácora.</li>
+      <li>Usuario MariaDB dedicado con <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code> y <code>DELETE</code> solo sobre <code>secopsentinel</code>.</li>
+      <li>No usar <code>root</code> para la aplicación; rotar la clave administrativa.</li>
+      <li>SQLAlchemy con consultas parametrizadas; evitar SQL dinámico.</li>
+    </ul>
+
+    <h4>Archivos, ClamAV y cuarentena</h4>
+    <ul>
+      <li>Rutas relativas, validación de <code>DATA_ROOT</code>, protección contra path traversal, permisos 600/700 y escritura atómica.</li>
+      <li>SHA-256 al ingerir y verificación al leer; manifiesto por expediente.</li>
+      <li>Validación de MIME, extensión, tamaño, páginas y PDFs cifrados.</li>
+      <li>ClamAV para cargas y descargas SECOP; cuarentena, registro y revisión humana antes de eliminar.</li>
+      <li>OCR y parsers PDF en subproceso con timeout y límites de recursos.</li>
+    </ul>
+
+    <h4>Aplicación web y API</h4>
+    <ul>
+      <li>Validación con Pydantic y escape automático de Jinja2.</li>
+      <li>Cabeceras de seguridad: CSP, <code>X-Content-Type-Options</code>, <code>X-Frame-Options</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code> y <code>Cache-Control: no-store</code> en páginas sensibles.</li>
+      <li>Manejo de errores sin stack traces ni rutas internas; límites de request y rate limiting.</li>
+    </ul>
+
+    <h4>IA y Copilot</h4>
+    <ul>
+      <li>Todo documento se trata como contenido no confiable; pruebas explícitas de prompt injection.</li>
+      <li>Salida JSON con esquema Pydantic y reintento de reparación.</li>
+      <li>Herramientas del Copilot con allowlist; el modelo no ejecuta acciones arbitrarias.</li>
+      <li>Sin secretos en prompts; redacción de PII en logs; citas a documento y página.</li>
+      <li>Ollama solo en loopback, un trabajo a la vez y timeout.</li>
+    </ul>
+
+    <h4>SECOP y Playwright</h4>
+    <ul>
+      <li>Perfil de navegador dedicado, fuera del repositorio.</li>
+      <li>Credenciales en keyring o login manual; nunca en código ni logs.</li>
+      <li>Descargas a cuarentena, escaneo con ClamAV y validación antes de moverlas al expediente.</li>
+      <li>Intervención humana para captchas y respeto de términos y límites del portal.</li>
+    </ul>
+
+    <h4>Exportaciones</h4>
+    <ul>
+      <li>Etiqueta de sensibilidad en DOCX/PDF/XLSX/ZIP y registro de exportaciones.</li>
+      <li>Envío manual y confirmado; sin envío automático en el MVP.</li>
+      <li>Cifrado opcional de ZIP/PDF y borrado seguro de temporales.</li>
+    </ul>
+
+    <h4>Respaldos</h4>
+    <ul>
+      <li><strong>Destino:</strong> segundo equipo con seguridad propia, definido con el área de IT. No se comparten credenciales con la aplicación.</li>
+      <li><strong>Herramienta:</strong> por definir con IT. Opciones: restic o borg con repositorio cifrado; alternativa con <code>rsync</code> + <code>tar</code> + <code>gpg</code> ya disponibles.</li>
+      <li><strong>Contenido:</strong> dump de MariaDB, expedientes, secretos cifrados, configuración y auditoría.</li>
+      <li><strong>Frecuencia y metas:</strong> respaldo diario; RPO propuesto de 24 horas y RTO propuesto de 4 horas; retención definida por el usuario cliente.</li>
+      <li><strong>Verificación:</strong> restauración trimestral en directorio aislado, validación de SHA-256 y manifiestos.</li>
+      <li><strong>Aceptación:</strong> repositorio cifrado, restauración exitosa y alerta si falla el respaldo.</li>
+    </ul>
+
+    <h4>Auditoría, monitoreo e incidentes</h4>
+    <ul>
+      <li><code>audit_log</code> append-only con usuario, acción, entidad, fecha y antes/después.</li>
+      <li>Eventos: login, acceso/descarga de documentos, exportaciones, análisis IA, cambios de configuración y respaldos.</li>
+      <li>Retención de logs configurable y sin PII innecesaria.</li>
+      <li>Playbook de incidentes: detección, contención, erradicación, recuperación, preservación forense y notificación.</li>
+      <li>Simulacro al cierre de la Fase 7 y revisión periódica.</li>
+    </ul>
+
+    <h4>Cadena de suministro</h4>
+    <ul>
+      <li>Dependencias fijadas con versiones y hashes; <code>pip-audit</code>, <code>bandit</code> y <code>ruff</code>.</li>
+      <li>Verificar checksum/digest de modelos Ollama y de Chromium de Playwright.</li>
+      <li>Pruebas de autenticación, CSRF, path traversal, upload malicioso, inyección SQL, prompt injection y restauración.</li>
+    </ul>
+
+    <h4>Cumplimiento y revisión legal</h4>
+    <ul>
+      <li><strong>La revisión legal la asume el usuario.</strong> El documento deja el checklist y el registro de fecha, alcance y responsable.</li>
+      <li>Checklist: Ley 1581, clasificación de datos, acceso, retención, notificación de incidentes, cadena de custodia, integridad de evidencia, términos de SECOP y licencias de modelos.</li>
+      <li>No sustituye asesoría legal externa.</li>
+    </ul>
+
+    <h3>Gates de seguridad por fase</h3>
+    <table>
+      <thead>
+        <tr><th>Fase</th><th>Gate de seguridad</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="name">Fase 0</td><td>Contenedor LUKS implementado, firewall auditado y corregido, Apache/FTP restringidos, ClamAV instalado, secretos protegidos, usuario DB dedicado, login y auditoría base.</td></tr>
+        <tr><td class="name">Fase 1</td><td>Rutas relativas, path traversal, SHA-256, permisos, cuarentena y auditoría documental.</td></tr>
+        <tr><td class="name">Fase 2</td><td>Prompt injection, texto no confiable, JSON validado, redacción de logs y OCR aislado.</td></tr>
+        <tr><td class="name">Fase 3</td><td>Auditoría de alertas y términos.</td></tr>
+        <tr><td class="name">Fase 4</td><td>Etiquetas de sensibilidad, registro de exportaciones y envío manual.</td></tr>
+        <tr><td class="name">Fase 5</td><td>Playwright aislado, credenciales seguras, cuarentena y escaneo de descargas.</td></tr>
+        <tr><td class="name">Fase 6</td><td>Acceso a ChromaDB, embeddings en reposo y allowlist del Copilot.</td></tr>
+        <tr><td class="name">Fase 7</td><td>SAST, <code>pip-audit</code>, pentest local, restauración, simulacro de incidente y checklist legal.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Criterios de aceptación de seguridad</h3>
+    <ul>
+      <li>Contenedor LUKS activo; sin datos sensibles en texto plano.</li>
+      <li>Firewall con política de denegar entrada; Apache y FTP ya no expuestos en <code>0.0.0.0</code>.</li>
+      <li>Respaldos cifrados al segundo equipo y restauración exitosa dentro del RTO.</li>
+      <li>ClamAV detecta EICAR y pone en cuarentena; descargas SECOP escaneadas.</li>
+      <li>Login solo con contraseña, bloqueo, sesión, CSRF y cabeceras.</li>
+      <li>Pruebas de path traversal, upload malicioso, inyección SQL y prompt injection fallan de forma segura.</li>
+      <li><code>audit_log</code> registra eventos críticos y la retención queda configurada.</li>
+      <li><code>gitleaks</code> sin hallazgos; <code>.env</code> con permisos 600; <code>root</code> rotado y usuario dedicado.</li>
+      <li>Checklist legal completado por el usuario.</li>
+    </ul>
+
+    <h3>Pendientes de seguridad</h3>
+    <ol>
+      <li>Implementar el contenedor LUKS y migrar datos y secretos. <strong>Autorizado, no ejecutado.</strong></li>
+      <li>Auditar y corregir firewall; restringir Apache y deshabilitar FTP.</li>
+      <li>Instalar ClamAV y actualizar firmas. <strong>Autorizado, no ejecutado.</strong></li>
+      <li>Definir con IT el segundo equipo, la herramienta de respaldo y sus credenciales.</li>
+      <li>Definir con el usuario cliente los plazos de retención por tipo de dato.</li>
+      <li>Completar el checklist legal por parte del usuario.</li>
+      <li>Instalar <code>cryptsetup</code> y la herramienta de respaldo. <strong>Autorizado, no ejecutado.</strong></li>
+    </ol>
   </section>
 
   <section id="resultado">
@@ -643,10 +870,15 @@
       <tbody>
         <tr><td class="name">Interfaz</td><td>FastAPI + Jinja2 + HTMX + CSS local (sin Node)</td></tr>
         <tr><td class="name">Backend</td><td>Python 3.12 + FastAPI + Uvicorn</td></tr>
-        <tr><td class="name">Base de datos</td><td>MariaDB 10.4 existente en XAMPP</td></tr>
-        <tr><td class="name">IA</td><td>Ollama local con <code>gemma4:e4b</code> (visión y herramientas)</td></tr>
+        <tr><td class="name">Base de datos</td><td>MariaDB 10.4 existente en XAMPP por socket Unix</td></tr>
+        <tr><td class="name">IA</td><td>Ollama local: <code>gemma4:e4b</code> (visión y herramientas), <code>qwen2.5:7b-instruct</code> (texto y JSON) y <code>nomic-embed-text</code> (embeddings)</td></tr>
+        <tr><td class="name">OCR</td><td>Tesseract para español con respaldo de visión <code>gemma4</code></td></tr>
+        <tr><td class="name">Procesamiento PDF</td><td><code>pdftotext</code> + <code>pypdf</code>/<code>pdfplumber</code>; <code>pdftoppm</code> solo para páginas escaneadas</td></tr>
+        <tr><td class="name">Almacenamiento de archivos</td><td>Filesystem fuera de <code>htdocs</code>; la BD guarda rutas relativas, SHA-256 y metadatos</td></tr>
+        <tr><td class="name">Búsqueda documental</td><td>FULLTEXT en MariaDB en el MVP; ChromaDB + <code>nomic-embed-text</code> en Fase 6</td></tr>
+        <tr><td class="name">Exportación</td><td>DOCX/PDF con LibreOffice, XLSX con openpyxl, CSV y ZIP; envío de oficios manual</td></tr>
         <tr><td class="name">Acceso</td><td><code>http://127.0.0.1:8000</code>, solo local</td></tr>
-        <tr><td class="name">Usuarios</td><td>Un solo investigador local</td></tr>
+        <tr><td class="name">Usuarios</td><td>Un solo investigador local con login obligatorio; sin RBAC por ahora</td></tr>
         <tr><td class="name">Costo</td><td>$0 en tokens y licencias; todo se ejecuta en el equipo</td></tr>
       </tbody>
     </table>
@@ -655,9 +887,9 @@
     <ul>
       <li>Repositorio con solo <code>_fix/bitacora.html</code>; remoto GitHub configurado.</li>
       <li>Python 3.12.3 y pip 26.3. Falta <code>ensurepip</code>: el entorno debe crearse con <code>virtualenv</code> o instalando <code>python3-venv</code>.</li>
-      <li>Ollama 0.40.14 activo con <code>gemma4:e4b</code> (visión, herramientas, 131k de contexto). No hay modelo de embeddings.</li>
-      <li>MariaDB 10.4.28 activa por socket Unix; se desconoce la contraseña de administración.</li>
-      <li>No hay Node, PostgreSQL, Docker, Nginx ni Tesseract. Sí hay <code>pdftotext</code>, LibreOffice y Chromium (snap).</li>
+      <li>Ollama 0.40.14 activo con <code>gemma4:e4b</code> (visión, herramientas, 131k de contexto). <code>nomic-embed-text</code> está autorizado y pendiente de descarga; <code>qwen2.5:7b-instruct</code> está pendiente de instalar y evaluar.</li>
+      <li>MariaDB 10.4.28 activa por socket Unix. Las credenciales administrativas fueron confirmadas por el usuario; la contraseña se almacenará solo en <code>.env</code> y no se registra en este documento. Se creará un usuario dedicado y se rotará la clave de <code>root</code>.</li>
+      <li>No hay Node, PostgreSQL, Docker, Nginx ni Tesseract. Sí hay <code>pdftotext</code>, LibreOffice y Chromium (snap). La instalación de Tesseract y la descarga de Chromium de Playwright están autorizadas.</li>
       <li>Hardware: 8 núcleos, 15 GB de RAM y 193 GB libres. Suficiente para un modelo de 7.5B en cuantización Q4.</li>
     </ul>
 
@@ -665,42 +897,84 @@
     <pre><code>secopsentinel/
 ├── _fix/bitacora.html
 ├── app/
-│   ├── main.py, config.py, db.py, models.py, schemas.py
-│   ├── routers/        # casos, documentos, análisis, actividades,
+│   ├── main.py, config.py, db.py, models.py, schemas.py, auth.py
+│   ├── routers/        # auth, casos, documentos, análisis, actividades,
 │   │                   # oficios, entidades, alertas, relaciones, búsqueda
-│   ├── services/       # ollama, extracción, ocr, resumen, jurídico,
-│   │                   # alertas, relaciones, documentos, excel, secop, search
+│   ├── services/       # ollama, extracción, ocr, pdf, storage, resumen,
+│   │                   # jurídico, alertas, relaciones, documentos, excel,
+│   │                   # secop, search
 │   ├── prompts/        # prompts versionados por tarea
-│   ├── templates/      # base, dashboard, casos, parciales HTMX
+│   ├── templates/      # base, login, dashboard, casos, parciales HTMX
 │   └── static/         # css, htmx.min.js, js propios
+├── docs/security/      # amenazas, LUKS, respaldo/restauración, incidentes, retención
+├── SECURITY.md
 ├── migrations/         # Alembic
-├── scripts/            # run.sh, backup.sh, seed.py, worker.py
+├── scripts/            # run.sh, backup.sh, security_check.sh, seed.py, worker.py, import_excel.py
 ├── tests/              # pytest + datos sintéticos
 ├── requirements.txt, pyproject.toml, .gitignore, .htaccess
 └── data -&gt; fuera del repositorio</code></pre>
-    <p>Los datos sensibles se guardan fuera de <code>htdocs</code> para que Apache no los sirva: <code>.env</code> en <code>~/.config/secopsentinel/</code> (chmod 600); expedientes, exportaciones y respaldos en <code>~/.local/share/secopsentinel/</code>; logs en <code>~/.local/state/secopsentinel/</code>. Un <code>.htaccess</code> en la raíz deniega <code>.git</code>, <code>app</code>, <code>data</code> y <code>.env</code>, y permite solo <code>_fix/</code>.</p>
+    <p>Los datos sensibles se guardan fuera de <code>htdocs</code> para que Apache no los sirva: <code>.env</code> en <code>~/.config/secopsentinel/</code> (chmod 600); expedientes, exportaciones y respaldos en <code>~/.local/share/secopsentinel/</code>; logs en <code>~/.local/state/secopsentinel/</code>. Con la decisión de <strong>datos cifrados</strong>, los datos y secretos deben residir dentro del contenedor LUKS o cifrarse con <code>age</code>/GPG mientras no exista cifrado de disco completo. Un <code>.htaccess</code> en la raíz deniega <code>.git</code>, <code>app</code>, <code>data</code> y <code>.env</code>, y permite solo <code>_fix/</code>. Los documentos originales no se guardan en la base de datos: la BD conserva rutas relativas, SHA-256 y metadatos; el texto extraído sí puede almacenarse para búsqueda FULLTEXT y citas por página.</p>
 
     <h3>Modelo de datos</h3>
-    <p>Tablas principales: <code>cases</code>, <code>persons</code>, <code>case_persons</code>, <code>entities</code>, <code>contracts</code>, <code>documents</code>, <code>crimes</code>, <code>case_crimes</code>, <code>activities</code>, <code>offices</code>, <code>alerts</code>, <code>relationships</code>, <code>entity_directory</code>, <code>templates</code>, <code>jobs</code>, <code>audit_log</code> y <code>settings</code>.</p>
+    <p>Tablas principales: <code>cases</code>, <code>persons</code>, <code>case_persons</code>, <code>entities</code>, <code>case_entities</code>, <code>contracts</code>, <code>case_contracts</code>, <code>documents</code>, <code>case_documents</code>, <code>document_pages</code>, <code>crimes</code>, <code>case_crimes</code>, <code>activities</code>, <code>offices</code>, <code>alerts</code>, <code>relationships</code>, <code>entity_directory</code>, <code>templates</code>, <code>exports</code>, <code>holidays</code>, <code>deadlines</code>, <code>jobs</code>, <code>users</code>, <code>sessions</code>, <code>login_attempts</code>, <code>audit_log</code>, <code>security_events</code>, <code>backup_runs</code>, <code>retention_policies</code>, <code>prompts</code>, <code>notifications</code>, <code>secop_manifests</code> y <code>settings</code>.</p>
     <ul>
       <li><code>cases</code>: NUNC, OT, OPJ, SPOA, delito, fiscal, despacho, investigador, fechas, estado, prioridad, municipio y departamento.</li>
-      <li><code>documents</code>: ruta, nombre original, tipo, SHA-256, texto extraído, OCR usado y páginas.</li>
+      <li><code>documents</code>: ruta relativa, nombre original, tipo, SHA-256, MIME, tamaño, páginas, OCR usado y estado del texto. El binario original no se guarda en la BD.</li>
+      <li><code>case_documents</code>: vínculo entre casos y documentos para reutilizar un mismo archivo sin duplicarlo.</li>
+      <li><code>document_pages</code>: texto extraído por página para FULLTEXT y citas verificables.</li>
+      <li><code>users</code>, <code>sessions</code>, <code>login_attempts</code> y <code>audit_log</code>: login de un solo usuario, sesiones, intentos fallidos y auditoría de accesos y cambios.</li>
+      <li><code>security_events</code>: eventos de seguridad (bloqueos, cuarentena, accesos denegados, fallos de respaldo e incidentes) para monitoreo y revisión.</li>
+      <li><code>backup_runs</code> y <code>retention_policies</code>: ejecuciones de respaldo, resultado, destino, verificación y plazos de retención configurables por tipo de dato.</li>
+      <li><code>holidays</code> y <code>deadlines</code>: festivos de Colombia y control de términos por caso.</li>
+      <li><code>exports</code>: archivos DOCX/PDF/XLSX/CSV/ZIP generados, con ruta, fecha y usuario.</li>
       <li><code>jobs</code>: estado de los análisis de IA para que sobrevivan reinicios.</li>
-      <li>Índices FULLTEXT en texto documental y campos del caso; índices únicos en NUNC, OT, documento y NIT.</li>
+      <li>Índices FULLTEXT en texto documental y campos del caso; índices únicos en NUNC, OT, documento y NIT; índice único en <code>documents.sha256</code> para deduplicación.</li>
     </ul>
+
+    <h3>Decisiones cerradas el 15 de noviembre de 2026</h3>
+    <div class="callout">
+      <h3>Arquitectura y alcance confirmados</h3>
+      <table>
+        <thead>
+          <tr><th>Tema</th><th>Decisión</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">PDF nativo</td><td><code>pdftotext</code> primero; <code>pypdf</code>/<code>pdfplumber</code> para texto y tablas; <code>pdftoppm</code> solo para páginas escaneadas, con OCR de Tesseract y respaldo de visión <code>gemma4</code>. El texto se guarda por página para citas.</td></tr>
+          <tr><td class="name">Múltiples archivos</td><td>Filesystem fuera de <code>htdocs</code>; la BD guarda ruta relativa, SHA-256 y metadatos. No se guardan binarios en la BD. <code>case_documents</code> permite vincular un archivo a varios casos sin duplicarlo.</td></tr>
+          <tr><td class="name">Modelos de IA</td><td><code>gemma4:e4b</code> para visión y herramientas; <code>qwen2.5:7b-instruct</code> para extracción de texto y JSON; <code>nomic-embed-text</code> para embeddings. Un solo trabajo de IA a la vez y todo local.</td></tr>
+          <tr><td class="name">OCR</td><td>Tesseract para español con respaldo de visión <code>gemma4</code>. PaddleOCR no se adopta en el MVP.</td></tr>
+          <tr><td class="name">Búsqueda vectorial</td><td>ChromaDB seleccionado para el MVP. Qdrant queda como alternativa futura si crece el volumen. En el MVP se usa FULLTEXT en MariaDB.</td></tr>
+          <tr><td class="name">Excel</td><td>La base de datos es la fuente de verdad. El Excel es referencia válida y salida principal de exportación. El Excel actual del investigador no está disponible: queda pendiente para importarlo una sola vez y usarlo como base de la plantilla de las 12 hojas.</td></tr>
+          <tr><td class="name">Login</td><td>Un solo usuario con login obligatorio, contraseña con Argon2id, cookie de sesión <code>HttpOnly</code>/<code>SameSite</code>, CSRF y auditoría. Sin MFA ni RBAC por ahora, dejando el campo de rol para futuro.</td></tr>
+          <tr><td class="name">Cifrado</td><td><strong>Datos cifrados</strong> con contenedor LUKS para datos y secretos. No se reinstala el disco completo. Implementación pendiente y autorizada, no ejecutada.</td></tr>
+          <tr><td class="name">Respaldos</td><td>Segundo equipo con seguridad propia, definido con IT. Herramienta cifrada pendiente de elegir; restauración verificable.</td></tr>
+          <tr><td class="name">Antimalware</td><td>ClamAV autorizado para cargas y descargas SECOP, con cuarentena y revisión humana.</td></tr>
+          <tr><td class="name">Términos</td><td><strong>Pendiente de definir.</strong> Se recomienda días hábiles con festivos de Colombia y zona horaria <code>America/Bogota</code>, con override manual auditado. Debe cerrarse antes de la Fase 3.</td></tr>
+          <tr><td class="name">Retención</td><td><strong>Pendiente de definir con el usuario cliente.</strong> El sistema la dejará configurable y auditable.</td></tr>
+          <tr><td class="name">Revisión legal</td><td><strong>La asume el usuario.</strong> Checklist y registro de revisión en la sección de seguridad.</td></tr>
+          <tr><td class="name">Exportación</td><td>DOCX y PDF con LibreOffice, XLSX con openpyxl, CSV y ZIP. Los oficios se exportan y el envío es manual, registrando radicado, fecha y respuesta. El envío automático por correo queda para una fase posterior.</td></tr>
+          <tr><td class="name">Autorizaciones</td><td>Tesseract, <code>nomic-embed-text</code>, Chromium de Playwright, <code>cryptsetup</code>, ClamAV y herramienta de respaldo: aprobadas. Ninguna se ejecuta en esta documentación.</td></tr>
+          <tr><td class="name">MariaDB</td><td>Credenciales administrativas confirmadas por el usuario. La contraseña no se registra en este documento ni en el repositorio; se almacenará en <code>.env</code> con permisos 600. Se creará un usuario dedicado y se rotará la clave de <code>root</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
 
     <h3>Fases de ejecución</h3>
 
     <article class="module phase" id="fase0">
-      <h3>Fase 0 · Preparación <span class="when">0.5 a 1 día</span></h3>
+      <h3>Fase 0 · Preparación y línea base de seguridad <span class="when">1 a 2 días</span></h3>
       <ul>
-        <li>Crear entorno Python (<code>venv</code> o <code>virtualenv</code>) e instalar FastAPI, Uvicorn, Jinja2, SQLAlchemy, PyMySQL, Alembic, httpx, pypdf, pdfplumber, openpyxl, python-docx, Pillow, pytest y ruff.</li>
-        <li>Crear la base <code>secopsentinel</code> y un usuario dedicado en MariaDB (requiere la contraseña de administración).</li>
-        <li>Configurar <code>.env</code>, directorios de datos, <code>.gitignore</code>, <code>.htaccess</code>, README y <code>AGENTS.md</code>.</li>
-        <li>Probar conexión a MariaDB y a Ollama; publicar la página inicial en <code>:8000</code>.</li>
+        <li>Crear entorno Python (<code>venv</code> o <code>virtualenv</code>) e instalar FastAPI, Uvicorn, Jinja2, SQLAlchemy, PyMySQL, Alembic, httpx, pypdf, pdfplumber, openpyxl, python-docx, Pillow, passlib/argon2, itsdangerous, pytest y ruff.</li>
+        <li>Crear la base <code>secopsentinel</code> y un usuario dedicado en MariaDB con las credenciales administrativas confirmadas. Guardar la contraseña solo en <code>.env</code> y rotar la clave de <code>root</code>.</li>
+        <li>Configurar <code>.env</code>, directorios de datos, <code>.gitignore</code>, <code>.htaccess</code>, README, <code>AGENTS.md</code> y <code>SECURITY.md</code>.</li>
+        <li>Instalar <code>cryptsetup</code>, crear el contenedor LUKS para datos y secretos, migrar las rutas y probar el desbloqueo. <strong>Autorizado, no ejecutado en esta documentación.</strong></li>
+        <li>Auditar el firewall con <code>sudo</code>, restringir Apache a loopback y deshabilitar FTP; verificar que Uvicorn, Ollama y MariaDB no se expongan.</li>
+        <li>Instalar ClamAV y actualizar firmas; instalar Tesseract para español, descargar <code>nomic-embed-text</code> y el Chromium de Playwright, e instalar/evaluar <code>qwen2.5:7b-instruct</code>.</li>
+        <li>Implementar el login de usuario único y la base de auditoría; crear los registros de intentos fallidos y eventos de seguridad.</li>
+        <li>Probar conexión a MariaDB, Ollama y extracción PDF nativa; publicar la página inicial en <code>:8000</code>.</li>
       </ul>
       <h4>Aceptación</h4>
-      <p>Uvicorn responde, la base conecta, Ollama responde y el repositorio no expone datos ni secretos.</p>
+      <p>Uvicorn responde, la base conecta, Ollama responde, el login funciona, la extracción PDF nativa produce texto, el contenedor LUKS está activo, el firewall no expone servicios sensibles, ClamAV está operativo y el repositorio no expone datos ni secretos.</p>
     </article>
 
     <article class="module phase mvp" id="fase1">
@@ -709,41 +983,46 @@
       <ul>
         <li>CRUD de noticias criminales con todos los campos.</li>
         <li>Creación automática de la carpeta del expediente por NUNC.</li>
-        <li>Carga de documentos con validación, hash, deduplicación y clasificación.</li>
+        <li>Carga de documentos con validación, hash SHA-256, deduplicación, ruta relativa y clasificación. El binario va al filesystem; la BD guarda metadatos.</li>
+        <li>Validación de rutas, MIME, tamaño, permisos 600/700 y protección contra path traversal; auditoría de carga y acceso.</li>
+        <li>Modelo <code>documents</code>, <code>case_documents</code> y <code>document_pages</code> para vincular archivos y guardar texto por página.</li>
         <li>Actividades investigativas y línea de tiempo.</li>
         <li>Dashboard inicial y exportación Excel base.</li>
         <li>Interfaz con listado, detalle por pestañas y formularios HTMX.</li>
       </ul>
       <h4>Aceptación</h4>
-      <p>Crear un caso, cargar denuncia y OPJ, guardar los archivos en el expediente, controlar vencimientos y exportar el Excel.</p>
+      <p>Crear un caso, cargar denuncia y OPJ, guardar los archivos en el expediente con ruta relativa y SHA-256, bloquear rutas maliciosas, controlar vencimientos y exportar el Excel.</p>
     </article>
 
     <article class="module phase mvp" id="fase2">
       <h3>Fase 2 · Pipeline de denuncia y alertas <span class="when">1.5 a 2 semanas</span></h3>
       <p><strong>Módulos:</strong> 2, 3, 4 y 14.</p>
       <ul>
-        <li>Extracción de texto con <code>pdftotext</code>/pypdf; OCR con Tesseract o visión de <code>gemma4</code> para escaneados.</li>
-        <li>Clasificación documental y extracción estructurada con Ollama en JSON validado.</li>
+        <li>Extracción nativa con <code>pdftotext</code> y <code>pypdf</code>/<code>pdfplumber</code>; detección de páginas escaneadas y OCR con Tesseract para español, con respaldo de visión <code>gemma4</code>.</li>
+        <li>Texto extraído por página con número de página para citas verificables y búsqueda FULLTEXT.</li>
+        <li>Clasificación documental y extracción estructurada con Ollama en JSON validado usando <code>qwen2.5:7b-instruct</code>; visión con <code>gemma4</code>.</li>
+        <li>Contenido no confiable: delimitar el documento, validar el JSON con Pydantic, impedir acciones arbitrarias y redactar PII en logs.</li>
         <li>Poblado de personas, entidades, contratos, delitos y fechas.</li>
         <li>Resumen ejecutivo, análisis jurídico inicial y posibles delitos con artículo y nivel de confianza.</li>
         <li>Alertas de delitos y actividades sugeridas.</li>
         <li>Pantalla de revisión humana obligatoria antes de guardar.</li>
       </ul>
       <h4>Aceptación</h4>
-      <p>Con una denuncia sintética, el sistema extrae datos, muestra el resumen, alerta posibles delitos con evidencia y permite confirmar o corregir.</p>
+      <p>Con una denuncia sintética, el sistema extrae datos, muestra el resumen, alerta posibles delitos con evidencia, resiste prompt injection y permite confirmar o corregir.</p>
     </article>
 
     <article class="module phase mvp" id="fase3">
       <h3>Fase 3 · Seguimiento y control <span class="when">1 semana</span></h3>
       <p><strong>Módulos:</strong> 14, 15, 16 y 18.</p>
       <ul>
-        <li>Motor de reglas: términos a 7/3/1 días, oficios sin respuesta, documentos faltantes y actividades vencidas.</li>
+        <li>Motor de reglas: términos a 7/3/1 días en días hábiles con festivos de Colombia y zona horaria <code>America/Bogota</code> (regla pendiente de definición), oficios sin respuesta, documentos faltantes y actividades vencidas.</li>
         <li>Centro de alertas y dashboard gerencial.</li>
         <li>Excel completo con las 12 hojas.</li>
         <li>Análisis de riesgo por contratación y administración pública.</li>
+        <li>Auditoría de alertas y eventos de seguridad; sin PII innecesaria en logs.</li>
       </ul>
       <h4>Aceptación</h4>
-      <p>Las alertas se disparan en las fechas correctas, el dashboard coincide con la base y el Excel contiene las 12 hojas.</p>
+      <p>Las alertas se disparan en las fechas correctas, el dashboard coincide con la base, el Excel contiene las 12 hojas y los eventos críticos quedan auditados.</p>
     </article>
 
     <div class="callout">
@@ -757,25 +1036,28 @@
       <ul>
         <li>Directorio de entidades con correos judiciales y PQR.</li>
         <li>Generación de oficios: entidad propuesta, solicitud, texto, correo y contacto.</li>
-        <li>Exportación a DOCX y PDF; control de enviado y respondido.</li>
+        <li>Exportación a DOCX y PDF con LibreOffice; envío manual y registro de radicado, enviado y respondido.</li>
+        <li>Etiqueta de sensibilidad, registro de exportaciones y cifrado opcional de archivos; limpieza de temporales.</li>
         <li>Cuestionarios de entrevista, informes institucionales y programa metodológico.</li>
-        <li>Plantillas institucionales configurables.</li>
+        <li>Plantillas institucionales configurables y versionadas.</li>
       </ul>
       <h4>Aceptación</h4>
-      <p>Generar un oficio para una entidad con destinatario correcto, exportarlo y registrar su seguimiento.</p>
+      <p>Generar un oficio para una entidad con destinatario correcto, exportarlo con etiqueta de sensibilidad, registrar su seguimiento y no dejar temporales con PII.</p>
     </article>
 
     <article class="module phase" id="fase5">
       <h3>Fase 5 · SECOP II <span class="when">1.5 a 2 semanas</span></h3>
       <p><strong>Módulo:</strong> 7.</p>
       <ul>
-        <li>Playwright con Chromium local; búsqueda por contrato, SECOP, entidad o NIT.</li>
+        <li>Playwright con Chromium local (descarga autorizada); búsqueda por contrato, SECOP, entidad o NIT.</li>
+        <li>Perfil de navegador aislado y credenciales en keyring o login manual; nunca en código ni logs.</li>
         <li>Descarga de estudios previos, pliegos, contrato, pólizas, actas, informes y liquidación.</li>
+        <li>Descargas a cuarentena, escaneo con ClamAV y validación antes de mover al expediente.</li>
         <li>Guardado en <code>expediente/NUNC/SECOP</code>, manifiesto, deduplicación, reintentos y logs.</li>
         <li>Intervención humana para captchas o sesiones; respeto de términos y límites del portal.</li>
       </ul>
       <h4>Aceptación</h4>
-      <p>Con un contrato público de prueba se descargan los documentos principales y queda el manifiesto de la descarga.</p>
+      <p>Con un contrato público de prueba se descargan los documentos principales, se escanean antes de moverlos y queda el manifiesto de la descarga.</p>
     </article>
 
     <article class="module phase" id="fase6">
@@ -784,31 +1066,35 @@
       <ul>
         <li>Coincidencias exactas y difusas: cédulas, NIT, correos, teléfonos, contratos y nombres.</li>
         <li>Alertas de casos relacionados.</li>
-        <li>Búsqueda FULLTEXT y luego semántica con ChromaDB + <code>nomic-embed-text</code>.</li>
-        <li>Copilot con herramientas: resumir, consultar casos, sugerir actividades y generar borradores, siempre citando documentos y páginas.</li>
+        <li>Búsqueda FULLTEXT y luego semántica con ChromaDB (seleccionado) + <code>nomic-embed-text</code> (descarga autorizada). Qdrant queda como alternativa futura.</li>
+        <li>ChromaDB solo en loopback y embeddings en reposo dentro del volumen cifrado; sin exposición a la red.</li>
+        <li>Copilot con herramientas en allowlist: resumir, consultar casos, sugerir actividades y generar borradores, siempre citando documentos y páginas.</li>
       </ul>
       <h4>Aceptación</h4>
-      <p>El Copilot responde con fuentes locales, detecta casos relacionados y no usa APIs de pago.</p>
+      <p>El Copilot responde con fuentes locales, detecta casos relacionados, no ejecuta acciones fuera de la allowlist y no usa APIs de pago.</p>
     </article>
 
     <article class="module phase" id="fase7">
       <h3>Fase 7 · Endurecimiento y entrega <span class="when">1 semana</span></h3>
       <ul>
         <li>Pruebas unitarias e integrales, manejo de errores y logs.</li>
-        <li>Respaldos automáticos de base y expedientes; prueba de restauración.</li>
+        <li>Respaldos automáticos cifrados de base y expedientes; prueba de restauración dentro del RTO.</li>
+        <li>SAST, <code>pip-audit</code>, <code>gitleaks</code> y pentest local de autenticación, CSRF, path traversal, upload, SQL y prompt injection.</li>
+        <li>Verificar LUKS, firewall, ClamAV con EICAR, cuarentena y simulacro de incidente.</li>
         <li>Script de arranque único y servicio de usuario opcional.</li>
-        <li>Documentación de uso, instalación y mantenimiento.</li>
+        <li>Documentación de uso, instalación, mantenimiento, respaldo/restauración y respuesta a incidentes.</li>
+        <li>Completar el checklist legal con el usuario.</li>
       </ul>
       <h4>Aceptación</h4>
-      <p>Instalación limpia desde el README, <code>pytest</code> en verde y respaldo/restauración verificados.</p>
+      <p>Instalación limpia desde el README, <code>pytest</code> en verde, análisis de seguridad sin hallazgos críticos, respaldo/restauración verificados, ClamAV operativo y checklist legal completado.</p>
     </article>
 
     <h3>Flujo técnico del MVP</h3>
     <ol class="flow">
       <li><strong>Cargar</strong> denuncia/OPJ: guardar archivo, calcular SHA-256 y crear el trabajo.</li>
-      <li><strong>Leer</strong>: PDF digital con <code>pdftotext</code>; escaneado con OCR o visión local.</li>
-      <li><strong>Extraer</strong>: Ollama devuelve JSON validado con personas, entidades, contratos, delitos y evidencia textual.</li>
-      <li><strong>Alimentar</strong>: se crea o actualiza el caso, el expediente, las personas, los contratos y el Excel.</li>
+      <li><strong>Leer</strong>: PDF digital con <code>pdftotext</code>/<code>pypdf</code>/<code>pdfplumber</code>; páginas escaneadas con Tesseract y respaldo de visión <code>gemma4</code>.</li>
+      <li><strong>Extraer</strong>: Ollama devuelve JSON validado con personas, entidades, contratos, delitos y evidencia textual, citando página o fragmento.</li>
+      <li><strong>Alimentar</strong>: se crea o actualiza el caso, el expediente, las personas y los contratos en la BD; el Excel se regenera como exportación.</li>
       <li><strong>Alertar</strong>: reglas y análisis jurídico generan alertas de delitos, términos y documentos faltantes.</li>
       <li><strong>Seguir</strong>: actividades, oficios, respuestas y vencimientos con estados.</li>
       <li><strong>Automatizar</strong>: oficios, entrevistas, informes, descarga SECOP y exportaciones.</li>
@@ -818,6 +1104,8 @@
     <h3>Reglas de IA</h3>
     <ul>
       <li>Ninguna llamada a APIs pagas; solo <code>127.0.0.1:11434</code>.</li>
+      <li>Modelo por tarea: <code>gemma4:e4b</code> para visión/herramientas, <code>qwen2.5:7b-instruct</code> para texto/JSON y <code>nomic-embed-text</code> para embeddings.</li>
+      <li>Un solo trabajo de IA a la vez para no saturar los 15 GB de RAM; cola persistente en <code>jobs</code>.</li>
       <li>Temperatura baja y salida JSON con validación Pydantic y reintento de reparación.</li>
       <li>Toda extracción debe citar documento y página o fragmento.</li>
       <li>El investigador confirma antes de persistir; el sistema no decide por el fiscal.</li>
@@ -825,13 +1113,7 @@
     </ul>
 
     <h3>Seguridad y datos sensibles</h3>
-    <ul>
-      <li>Uvicorn solo en <code>127.0.0.1</code>, sin exposición a la red local.</li>
-      <li>Datos y secretos fuera de <code>htdocs</code>; <code>.htaccess</code> para denegar código y <code>.git</code>.</li>
-      <li>Validación de tipos y tamaños, nombres saneados y protección contra path traversal.</li>
-      <li>Auditoría de accesos y cambios; respaldos cifrados opcionales.</li>
-      <li>Sin telemetría ni envío de documentos al exterior.</li>
-    </ul>
+    <p>La seguridad se desarrolla en la sección transversal <a href="#seguridad">Protección de seguridad y datos judiciales</a>. Allí se detallan el contenedor LUKS, firewall, ClamAV, autenticación solo con contraseña, respaldos al segundo equipo, auditoría, retención y revisión legal. Resumen operativo: Uvicorn solo en <code>127.0.0.1</code>, login obligatorio, datos y secretos fuera de <code>htdocs</code>, usuario dedicado de MariaDB, rutas relativas, auditoría y sin telemetría.</p>
 
     <h3>Riesgos principales</h3>
     <table>
@@ -839,33 +1121,50 @@
         <tr><th>Riesgo</th><th>Mitigación</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>gemma4</code> 7.5B lento o impreciso</td><td>Un solo trabajo de IA a la vez, fragmentación, prompts estrictos y revisión humana.</td></tr>
-        <tr><td>Falta de modelo de embeddings</td><td>Usar FULLTEXT en el MVP; agregar <code>nomic-embed-text</code> en la Fase 6.</td></tr>
+        <tr><td><code>gemma4</code> 7.5B lento o impreciso</td><td>Un solo trabajo de IA a la vez, fragmentación, prompts estrictos, modelo de texto 7B para extracción y revisión humana.</td></tr>
+        <tr><td>Demora en descarga de <code>nomic-embed-text</code></td><td>Descarga autorizada; usar FULLTEXT en el MVP y habilitar búsqueda semántica en la Fase 6.</td></tr>
         <tr><td>SECOP con captchas o cambios</td><td>Playwright con intervención humana, reintentos y selectores versionados.</td></tr>
-        <tr><td>Documentos escaneados sin OCR</td><td>Instalar Tesseract o usar la visión de <code>gemma4</code>.</td></tr>
-        <tr><td>Datos judiciales expuestos</td><td>Bind local, datos fuera del docroot, <code>.htaccess</code>, permisos 600 y respaldos.</td></tr>
+        <tr><td>Tesseract no instalado</td><td>Instalación autorizada; mientras tanto, respaldo con visión <code>gemma4</code>.</td></tr>
+        <tr><td>Excel actual no disponible</td><td>Usar el diseño de las 12 hojas como referencia; importar el Excel una sola vez cuando el investigador lo entregue.</td></tr>
+        <tr><td>Términos sin definir</td><td>Cerrar la regla de días hábiles, festivos y zona horaria antes de la Fase 3.</td></tr>
+        <tr><td>Credenciales administrativas de MariaDB</td><td>Crear usuario dedicado, no usar <code>root</code>, guardar el secreto solo en <code>.env</code> y rotar la clave administrativa.</td></tr>
+        <tr><td>Apache y FTP expuestos en <code>0.0.0.0</code></td><td>Restringir Apache a loopback, deshabilitar FTP y aplicar firewall con denegación de entrada.</td></tr>
+        <tr><td>Disco sin cifrar</td><td>Contenedor LUKS para datos y secretos; clave de recuperación y prueba de restauración.</td></tr>
+        <tr><td>ClamAV ausente</td><td>Instalación autorizada, escaneo de cargas y descargas SECOP, cuarentena y revisión humana.</td></tr>
+        <tr><td>Respaldos sin definir</td><td>Acordar con IT el segundo equipo, la herramienta cifrada, la retención y la prueba de restauración.</td></tr>
+        <tr><td>Prompt injection en documentos</td><td>Contenido no confiable, delimitación, JSON validado, allowlist de herramientas y revisión humana.</td></tr>
+        <tr><td>Fuga por exportaciones</td><td>Etiquetas de sensibilidad, registro de exportaciones, envío manual y cifrado opcional.</td></tr>
+        <tr><td>Secretos en repositorio o logs</td><td><code>gitleaks</code>, <code>.env</code> dentro del volumen cifrado, redacción de logs y rotación.</td></tr>
+        <tr><td>Retención sin definir</td><td>Definir con el usuario cliente los plazos por tipo de dato y dejarlos configurables.</td></tr>
+        <tr><td>Datos judiciales expuestos</td><td>Bind local, login obligatorio, cifrado en reposo, datos fuera del docroot, <code>.htaccess</code>, permisos 600 y respaldos cifrados.</td></tr>
         <tr><td>Alcance de 18 módulos</td><td>Entregas por hitos: MVP primero y módulos posteriores.</td></tr>
       </tbody>
     </table>
 
-    <h3>Pendientes de confirmación antes de la Fase 0</h3>
+    <h3>Pendientes de confirmación y materiales antes de la Fase 0</h3>
     <ol>
-      <li>Contraseña o usuario administrador de MariaDB para crear la base y el usuario dedicado.</li>
+      <li><strong>Excel de control actual: no disponible hoy.</strong> Queda pendiente para importarlo una sola vez, mapear sus columnas y usarlo como base de la plantilla de las 12 hojas. Mientras tanto se usa el diseño documentado en el Módulo 18. La herramienta reemplaza el Excel como maestro operativo, pero mantiene la exportación XLSX.</li>
+      <li><strong>Términos: pendiente de definir.</strong> Debe cerrarse la regla de días hábiles, festivos de Colombia y zona horaria <code>America/Bogota</code> antes de la Fase 3.</li>
       <li>Documentos de ejemplo desensibilizados (denuncia y OPJ) para calibrar los prompts.</li>
       <li>Formatos institucionales de oficios e informes en DOCX.</li>
-      <li>Autorización para instalar Tesseract con <code>sudo</code> o preferencia por la visión de <code>gemma4</code>.</li>
-      <li>Autorización para descargar <code>nomic-embed-text</code> (~275 MB) y Chromium de Playwright (~150 MB).</li>
-      <li>¿Existe un Excel de control actual que deba importarse?</li>
       <li>Contrato público de prueba para validar SECOP II.</li>
+      <li><strong>MariaDB:</strong> credenciales administrativas confirmadas por el usuario; pendiente crear el usuario dedicado y rotar la clave de <code>root</code>. Los secretos se guardan solo en <code>.env</code>, nunca en este documento ni en el repositorio.</li>
+      <li><strong>Instalaciones autorizadas y pendientes de ejecución:</strong> Tesseract con español, <code>nomic-embed-text</code> y Chromium de Playwright. También queda pendiente instalar y evaluar <code>qwen2.5:7b-instruct</code>.</li>
+      <li><strong>Cifrado de datos:</strong> crear el contenedor LUKS para datos y secretos. <code>cryptsetup</code> está autorizado, pero no se ha instalado ni ejecutado.</li>
+      <li><strong>Firewall y exposición:</strong> auditar las reglas con <code>sudo</code>, restringir Apache a loopback y deshabilitar FTP.</li>
+      <li><strong>ClamAV:</strong> instalación y actualización de firmas autorizadas; pendiente de ejecución.</li>
+      <li><strong>Respaldos:</strong> definir con IT el segundo equipo, la herramienta cifrada y las credenciales. La herramienta de respaldo está autorizada, pero no se ha instalado.</li>
+      <li><strong>Retención:</strong> definir con el usuario cliente los plazos por tipo de dato.</li>
+      <li><strong>Revisión legal:</strong> completar el checklist por parte del usuario.</li>
     </ol>
 
     <h3>Próximo paso</h3>
-    <p>Iniciar la <strong>Fase 0</strong>: preparación del entorno, base de datos, estructura del proyecto y prueba de humo con FastAPI + MariaDB + Ollama.</p>
+    <p>Iniciar la <strong>Fase 0</strong> con su línea base de seguridad: contenedor LUKS, firewall auditado, Apache/FTP restringidos, ClamAV y secretos protegidos; luego preparación del entorno, base y usuario dedicado, login de usuario único, estructura del proyecto, pipeline PDF, instalación de Tesseract, descarga de <code>nomic-embed-text</code> y Chromium de Playwright, y prueba de humo con FastAPI + MariaDB + Ollama. El Excel actual, la retención, el equipo de respaldo y la regla de términos quedan documentados como pendientes, sin bloquear el inicio de la Fase 0. <strong>Esta bitácora solo planifica: no se ejecutan instalaciones ni herramientas.</strong></p>
   </section>
 
   <section id="verificados">
     <h2>Software y servicios verificados</h2>
-    <p>Datos verificados el 13 de noviembre de 2026.</p>
+    <p>Datos verificados el 13 de noviembre de 2026; inspección de seguridad, decisiones y autorizaciones actualizadas el 15 de noviembre de 2026.</p>
     <table>
       <thead>
         <tr>
@@ -915,8 +1214,14 @@
         <tr>
           <td class="name">Apache</td>
           <td class="ver">2.4.56</td>
-          <td>En ejecución con SSL; escucha en los puertos 80 y 443.</td>
-          <td><span class="estado ok">Verificado</span></td>
+          <td>En ejecución con SSL; escucha en <code>*:80</code> y <code>*:443</code>. Restricción a loopback pendiente.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="name">FTP</td>
+          <td class="ver">—</td>
+          <td>Escucha en <code>*:21</code>. Deshabilitar o restringir a loopback; pendiente.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
         </tr>
         <tr>
           <td class="name">MariaDB / MySQL</td>
@@ -948,8 +1253,76 @@
           <td>Kernel x86_64 sobre Zorin OS / Ubuntu 24.04.</td>
           <td><span class="estado ok">Verificado</span></td>
         </tr>
+        <tr>
+          <td class="name">Tesseract</td>
+          <td class="ver">—</td>
+          <td>No instalado. Instalación con idioma español autorizada el 15 de noviembre de 2026.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="name">nomic-embed-text</td>
+          <td class="ver">~275 MB</td>
+          <td>Descarga autorizada el 15 de noviembre de 2026; pendiente de instalar en Ollama.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="name">Playwright · Chromium</td>
+          <td class="ver">~150 MB</td>
+          <td>Descarga autorizada el 15 de noviembre de 2026; pendiente de instalar.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="name">Qwen 2.5 7B Instruct</td>
+          <td class="ver">—</td>
+          <td>Modelo de texto propuesto para extracción/JSON; pendiente de instalar y evaluar.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="name">Cifrado LUKS</td>
+          <td class="ver">—</td>
+          <td>Disco raíz ext4 sin LUKS. Se decidió contenedor cifrado para datos y secretos; pendiente de implementar.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="name">cryptsetup</td>
+          <td class="ver">—</td>
+          <td>No instalado. Instalación autorizada el 15 de noviembre de 2026; no ejecutada.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="name">ClamAV</td>
+          <td class="ver">—</td>
+          <td>No instalado. Instalación y actualización de firmas autorizadas; no ejecutadas.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="name">Respaldo cifrado</td>
+          <td class="ver">—</td>
+          <td>Herramienta por definir con IT (restic, borg o <code>rsync</code> + <code>gpg</code>). <code>rsync</code> y <code>gpg</code> disponibles.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
+        <tr>
+          <td class="name">Firewall UFW</td>
+          <td class="ver">—</td>
+          <td>Instalado; estado y reglas no verificados sin <code>root</code>. Pendiente auditoría con <code>sudo</code>.</td>
+          <td><span class="estado parcial">Pendiente</span></td>
+        </tr>
       </tbody>
     </table>
+
+    <h3>Autorizaciones y decisiones del 15 de noviembre de 2026</h3>
+    <ul>
+      <li>Instalación de Tesseract con idioma español: <strong>autorizada</strong>.</li>
+      <li>Descarga de <code>nomic-embed-text</code> y Chromium de Playwright: <strong>autorizada</strong>.</li>
+      <li>Credenciales administrativas de MariaDB: <strong>confirmadas por el usuario</strong>. La contraseña no se registra en este documento ni en el repositorio; se almacenará en <code>.env</code> con permisos 600. Se creará un usuario dedicado y se rotará la clave de <code>root</code>.</li>
+      <li>Excel de control actual: <strong>no disponible</strong>; queda pendiente para importación y para definir la plantilla de exportación de las 12 hojas.</li>
+      <li>Regla de términos en días hábiles y festivos: <strong>pendiente de definición</strong> antes de la Fase 3.</li>
+      <li>Cifrado: <strong>datos cifrados con contenedor LUKS</strong>; no se reinstala el disco completo. Implementación pendiente.</li>
+      <li><code>cryptsetup</code>, ClamAV y herramienta de respaldo: instalación <strong>autorizada</strong>, pero <strong>no ejecutada</strong>; esta bitácora solo documenta.</li>
+      <li>Respaldos: <strong>segundo equipo con seguridad propia</strong>; herramienta y equipo a definir con el área de IT.</li>
+      <li>Autenticación: <strong>solo contraseña por ahora</strong>, sin MFA. Acceso <strong>solo local</strong> con auditoría de firewall.</li>
+      <li>Retención: <strong>pendiente de definir con el usuario cliente</strong>. Revisión legal: <strong>la asume el usuario</strong>.</li>
+    </ul>
   </section>
 </main>
 
