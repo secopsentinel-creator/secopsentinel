@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}secopsentinel{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+  <script src="{{ url_for('static', path='js/htmx.min.js') }}" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>secopsentinel</strong>
+      <span>Investigación judicial y contratación estatal</span>
+    </div>
+    {% block nav %}{% endblock %}
+  </header>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    Ejecución local. Datos judiciales fuera del docroot.
+  </footer>
+</body>
+</html>

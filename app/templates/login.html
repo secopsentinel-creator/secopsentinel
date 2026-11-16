@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Ingreso · secopsentinel{% endblock %}
+{% block content %}
+<section class="card login-card">
+  <h1>Ingreso</h1>
+  <p class="muted">Acceso local para el investigador asignado.</p>
+  {% if error %}
+  <div class="alert" role="alert">{{ error }}</div>
+  {% endif %}
+  <form method="post" action="/login" class="form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="username">Usuario</label>
+    <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+    <label for="password">Contraseña</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    <button type="submit">Ingresar</button>
+  </form>
+</section>
+{% endblock %}

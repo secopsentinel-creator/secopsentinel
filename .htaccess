@@ -1,0 +1,16 @@
+# Defensa en profundidad: el backend FastAPI debe servirse por Uvicorn en loopback.
+# Este directorio no debe exponer datos ni código de aplicación vía Apache.
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Deny from all
+</IfModule>
+
+<FilesMatch "^(\.env|\.env\.example|\.gitignore|README\.md|AGENTS\.md|SECURITY\.md|alembic\.ini)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>

@@ -1,0 +1,39 @@
+[project]
+name = "secopsentinel"
+version = "0.1.0"
+description = "Plataforma local de apoyo a investigación judicial y contratación estatal"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "alembic==1.20.1",
+  "argon2-cffi==25.1.0",
+  "fastapi==0.163.1",
+  "httpx==0.28.1",
+  "itsdangerous==2.2.0",
+  "Jinja2==3.1.6",
+  "openpyxl==3.1.5",
+  "passlib==1.7.4",
+  "pdfplumber==0.11.10",
+  "pillow==13.0.0",
+  "pydantic==2.14.3",
+  "pydantic-settings==2.16.3",
+  "pypdf==7.1.0",
+  "PyMySQL==1.2.4",
+  "python-docx==1.2.0",
+  "python-multipart==0.0.34",
+  "ruff==0.17.5",
+  "SQLAlchemy==2.1.8",
+  "uvicorn==0.54.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/conftest.py" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

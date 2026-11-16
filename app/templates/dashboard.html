@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Panel · secopsentinel{% endblock %}
+{% block nav %}
+<form method="post" action="/logout" class="logout-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button type="submit" class="ghost">Salir</button>
+</form>
+{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Panel</h1>
+  <p>Usuario: <strong>{{ user.username }}</strong></p>
+  <p>Rol: <strong>{{ user.role }}</strong></p>
+  <p class="muted">Fase 0 activa: login de usuario único y auditoría base.</p>
+</section>
+{% endblock %}
