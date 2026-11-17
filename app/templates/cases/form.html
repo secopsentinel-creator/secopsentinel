@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}{% if case %}Editar caso{% else %}Nuevo caso{% endif %} · secopsentinel{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="page-heading">
+    <div>
+      <h1>{% if case %}Editar caso{% else %}Nuevo caso{% endif %}</h1>
+      <p class="muted">Registro de la noticia criminal y del equipo asignado.</p>
+    </div>
+    <a class="ghost-link" href="{% if case %}/cases/{{ case.id }}{% else %}/cases{% endif %}">Volver</a>
+  </div>
+
+  {% if error %}
+  <div class="alert" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="{% if case %}/cases/{{ case.id }}/edit{% else %}/cases{% endif %}" class="form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <fieldset>
+      <legend>Identificación</legend>
+      <div class="grid">
+        <div class="field">
+          <label for="nunc">NUNC *</label>
+          <input id="nunc" name="nunc" value="{{ values.get('nunc', '') }}" maxlength="64"
+                 pattern="[0-9A-Za-z_-]+" required {% if case %}readonly{% endif %}>
+          {% if errors.get('nunc') %}<span class="field-error">{{ errors.get('nunc') }}</span>{% endif %}
+        </div>
+        <div class="field">
+          <label for="ot">OT</label>
+          <input id="ot" name="ot" value="{{ values.get('ot', '') }}" maxlength="64">
+          {% if errors.get('ot') %}<span class="field-error">{{ errors.get('ot') }}</span>{% endif %}
+        </div>
+        <div class="field">
+          <label for="opj">OPJ</label>
+          <input id="opj" name="opj" value="{{ values.get('opj', '') }}" maxlength="64">
+          {% if errors.get('opj') %}<span class="field-error">{{ errors.get('opj') }}</span>{% endif %}
+        </div>
+        <div class="field">
+          <label for="spoa">SPOA</label>
+          <input id="spoa" name="spoa" value="{{ values.get('spoa', '') }}" maxlength="64">
+          {% if errors.get('spoa') %}<span class="field-error">{{ errors.get('spoa') }}</span>{% endif %}
+        </div>
+        <div class="field">
+          <label for="assignment_date">Fecha de asignación *</label>
+          <input id="assignment_date" name="assignment_date" type="date" value="{{ values.get('assignment_date', '') }}" required>
+          {% if errors.get('assignment_date') %}<span class="field-error">{{ errors.get('assignment_date') }}</span>{% endif %}
+        </div>
+        <div class="field">
+          <label for="due_date">Fecha de vencimiento</label>
+          <input id="due_date" name="due_date" type="date" value="{{ values.get('due_date', '') }}">
+          {% if errors.get('due_date') %}<span class="field-error">{{ errors.get('due_date') }}</span>{% endif %}
+        </div>
+        <div class="field">
+          <label for="status">Estado</label>
+          <select id="status" name="status">
+            {% for key, label in status_labels.items() %}
+            <option value="{{ key }}" {% if values.get('status', 'activo') == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="priority">Prioridad</label>
+          <select id="priority" name="priority">
+            {% for key, label in priority_labels.items() %}
+            <option value="{{ key }}" {% if values.get('priority', 'media') == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Despacho</legend>
+      <div class="grid">
+        <div class="field">
+          <label for="prosecutor_office">Fiscalía</label>
+          <input id="prosecutor_office" name="prosecutor_office" value="{{ values.get('prosecutor_office', '') }}" maxlength="160">
+        </div>
+        <div class="field">
+          <label for="office_number">Número de despacho</label>
+          <input id="office_number" name="office_number" value="{{ values.get('office_number', '') }}" maxlength="64">
+        </div>
+        <div class="field">
+          <label for="prosecutor_name">Fiscal asignado</label>
+          <input id="prosecutor_name" name="prosecutor_name" value="{{ values.get('prosecutor_name', '') }}" maxlength="160">
+        </div>
+        <div class="field">
+          <label for="prosecutor_email">Correo electrónico</label>
+          <input id="prosecutor_email" name="prosecutor_email" type="email" value="{{ values.get('prosecutor_email', '') }}" maxlength="255">
+        </div>
+        <div class="field">
+          <label for="prosecutor_phone">Teléfono</label>
+          <input id="prosecutor_phone" name="prosecutor_phone" value="{{ values.get('prosecutor_phone', '') }}" maxlength="64">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Investigación</legend>
+      <div class="grid">
+        <div class="field">
+          <label for="investigator_name">Investigador asignado</label>
+          <input id="investigator_name" name="investigator_name" value="{{ values.get('investigator_name', '') }}" maxlength="160">
+        </div>
+        <div class="field">
+          <label for="cti_group">Grupo CTI</label>
+          <input id="cti_group" name="cti_group" value="{{ values.get('cti_group', '') }}" maxlength="160">
+        </div>
+        <div class="field">
+          <label for="management_status">Estado de gestión</label>
+          <input id="management_status" name="management_status" value="{{ values.get('management_status', '') }}" maxlength="64">
+        </div>
+        <div class="field">
+          <label for="crime">Delito</label>
+          <input id="crime" name="crime" value="{{ values.get('crime', '') }}" maxlength="255">
+        </div>
+        <div class="field">
+          <label for="article">Artículo</label>
+          <input id="article" name="article" value="{{ values.get('article', '') }}" maxlength="64">
+        </div>
+        <div class="field">
+          <label for="municipality">Municipio</label>
+          <input id="municipality" name="municipality" value="{{ values.get('municipality', '') }}" maxlength="160">
+        </div>
+        <div class="field">
+          <label for="department">Departamento</label>
+          <input id="department" name="department" value="{{ values.get('department', '') }}" maxlength="160">
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit">{% if case %}Guardar cambios{% else %}Crear caso{% endif %}</button>
+      <a class="ghost-link" href="{% if case %}/cases/{{ case.id }}{% else %}/cases{% endif %}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

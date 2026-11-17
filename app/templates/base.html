@@ -13,7 +13,19 @@
       <strong>secopsentinel</strong>
       <span>Investigación judicial y contratación estatal</span>
     </div>
-    {% block nav %}{% endblock %}
+    {% block nav %}
+    {% if user is defined and user %}
+    <nav class="nav">
+      <a href="/">Panel</a>
+      <a href="/cases">Casos</a>
+      <a href="/cases/new">Nuevo caso</a>
+      <form method="post" action="/logout" class="logout-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="ghost">Salir</button>
+      </form>
+    </nav>
+    {% endif %}
+    {% endblock %}
   </header>
   <main class="content">
     {% block content %}{% endblock %}

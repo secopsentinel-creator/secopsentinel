@@ -3,7 +3,9 @@
 Plataforma local de apoyo a investigación judicial y contratación estatal.
 
 ## Estado
-- Fase 0: línea base completada (LUKS, firewall, Apache en loopback, FTP detenido, Avahi deshabilitado, ClamAV, MariaDB con usuarios DML/migración, login y auditoría verificados).
+- Fase 0: línea base completada (LUKS, firewall, Apache en loopback, FTP detenido, Avahi deshabilitado, ClamAV, MariaDB con usuarios DML/migración, login y auditoría verificados). phpMyAdmin confirmado.
+- Fase 1: núcleo de casos y expediente implementado (CRUD, carpetas por NUNC, documentos con SHA-256, cuarentena, actividades, panel y exportación Excel base).
+- Sin datos judiciales reales cargados; las pruebas usan datos sintéticos.
 - Respaldo externo: diferido, sin fecha; no se define proceso hasta acordarlo con IT/cliente.
 - Herramienta de respaldo recomendada: restic; no se instala hasta definir el proceso y el destino.
 - Fuente de verdad operativa: `_fix/bitacora.html`.
@@ -70,6 +72,13 @@ XAMPP ya no arranca solo (`xampp.service` deshabilitado). Tras reiniciar, desblo
 ```bash
 sudo /opt/lampp/lampp start
 ```
+
+## Casos y expediente
+- Rutas: `/cases`, `/cases/new`, `/cases/{id}` y `/cases/export.xlsx`.
+- Cada NUNC genera una carpeta con las subcarpetas `Denuncia`, `OPJ`, `Programa metodológico`, `Oficios`, `Respuestas`, `Entrevistas`, `Informes`, `SECOP`, `EMP`, `EF` y `_manifest.json`.
+- Los binarios se guardan una sola vez por SHA-256 en `DOCUMENTS_DIR`; la carpeta del caso recibe un enlace duro con nombre legible.
+- Se aceptan PDF, DOCX y XLSX; se valida tamaño (`MAX_UPLOAD_MB=50`), extensión, firma de contenido y antivirus. Un archivo infectado va a `QUARANTINE_DIR`.
+- Directorios `700` y archivos `600`; descarga autenticada y auditada; no se sirven documentos por `/static`.
 
 ## Respaldos
 Respaldo externo diferido, sin fecha. Herramienta recomendada: restic, pero no se instala ni se define proceso/destino hasta acordarlo con IT/cliente. El USB actual de 3.8 GB solo contiene la cabecera LUKS y no alcanza para el volumen de 50 GB.

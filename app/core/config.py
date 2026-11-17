@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     data_dir: Path = Path.home() / ".local" / "share" / "secopsentinel"
     cases_dir: Path | None = None
     quarantine_dir: Path | None = None
+    documents_dir: Path | None = None
+    max_upload_mb: int = 50
 
     ollama_base_url: str = "http://127.0.0.1:11434"
 
@@ -46,7 +48,7 @@ class Settings(BaseSettings):
     login_max_attempts: int = 5
     login_lockout_minutes: int = 15
 
-    @field_validator("data_dir", "cases_dir", "quarantine_dir", mode="before")
+    @field_validator("data_dir", "cases_dir", "quarantine_dir", "documents_dir", mode="before")
     @classmethod
     def _expand_path(cls, value: str | Path | None) -> Path | None:
         if value is None:
@@ -64,6 +66,14 @@ class Settings(BaseSettings):
     @property
     def quarantine_path(self) -> Path:
         return self.quarantine_dir or (self.data_dir / "quarantine")
+
+    @property
+    def documents_path(self) -> Path:
+        return self.documents_dir or (self.data_dir / "documents")
+
+    @property
+    def max_upload_bytes(self) -> int:
+        return self.max_upload_mb * 1024 * 1024
 
     def _database_url(self, user: str, password: str) -> str:
         from urllib.parse import quote_plus

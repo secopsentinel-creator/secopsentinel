@@ -1141,7 +1141,8 @@
       </tbody>
     </table>
 
-    <h3>Pendientes de confirmación y materiales antes de la Fase 0</h3>
+    <h3>Pendientes de confirmación y materiales (plan original previo a la Fase 0)</h3>
+    <p class="muted">Esta lista conserva el plan original. El estado ejecutado se registra en “Realizados y pendientes (16 de noviembre de 2026)”.</p>
     <ol>
       <li><strong>Excel de control actual: no disponible hoy.</strong> Queda pendiente para importarlo una sola vez, mapear sus columnas y usarlo como base de la plantilla de las 12 hojas. Mientras tanto se usa el diseño documentado en el Módulo 18. La herramienta reemplaza el Excel como maestro operativo, pero mantiene la exportación XLSX.</li>
       <li><strong>Términos: pendiente de definir.</strong> Debe cerrarse la regla de días hábiles, festivos de Colombia y zona horaria <code>America/Bogota</code> antes de la Fase 3.</li>
@@ -1341,18 +1342,21 @@
       <li><strong>Secretos:</strong> <code>.env</code> real en <code>~/.local/share/secopsentinel/config/.env</code> con permisos 600; <code>~/.config/secopsentinel</code> enlaza al volumen LUKS.</li>
       <li><strong>Datadir MariaDB:</strong> trasladado a <code>~/.local/share/secopsentinel/mysql</code>; <code>/opt/lampp/var/mysql</code> es un enlace verificado, la aplicación consulta y <code>@@datadir</code> responde. Copia sin cifrar eliminada. <code>xampp.service</code> deshabilitado; tras reiniciar, desbloquear LUKS y ejecutar <code>sudo /opt/lampp/lampp start</code>.</li>
       <li><strong>Login de la aplicación:</strong> verificado con el datadir trasladado; Uvicorn responde en <code>127.0.0.1:8000</code>.</li>
-      <li><strong>phpMyAdmin:</strong> Apache usa <code>daemon</code>; se añadió ACL de tránsito en <code>/home/maudaemon</code>, <code>~/.local</code> y <code>~/.local/share</code>, y el punto de montaje quedó en <code>711</code>. Falta confirmar el login en phpMyAdmin y endurecer el datadir a <code>711</code> con <code>sudo</code>.</li>
+      <li><strong>phpMyAdmin:</strong> Apache usa <code>daemon</code>; se añadió ACL de tránsito en <code>/home/maudaemon</code>, <code>~/.local</code> y <code>~/.local/share</code>, el punto de montaje quedó en <code>711</code> y el login fue confirmado. Solo queda endurecer el datadir a <code>711</code> con <code>sudo</code>.</li>
+      <li><strong>Fase 1 · Casos y expediente:</strong> migración <code>0002_cases_documents</code> aplicada; CRUD de casos con campos del Módulo 1, carpeta automática por NUNC y <code>_manifest.json</code>. Rutas relativas y validación contra path traversal.</li>
+      <li><strong>Documentos:</strong> carga de PDF/DOCX/XLSX con límite de tamaño, validación de firma, SHA-256, deduplicación y enlace duro en la carpeta del caso. Escaneo con ClamAV, cuarentena, permisos <code>700/600</code>, descarga autenticada y auditoría de carga/descarga/rechazo.</li>
+      <li><strong>Panel, actividades y Excel:</strong> panel con conteos y vencimientos, actividades con línea de tiempo y exportación XLSX base (control general y actividades). Interfaz con listado, detalle por pestañas y HTMX.</li>
       <li><strong>Respaldos:</strong> diferido, sin fecha. restic es solo recomendación; no se instala ni se define proceso/destino hasta acordarlo con IT/cliente.</li>
-      <li><strong>Calidad:</strong> Ruff sin hallazgos y 9 pruebas aprobadas.</li>
+      <li><strong>Calidad:</strong> Ruff sin hallazgos y 20 pruebas aprobadas con datos sintéticos.</li>
       <li><strong>Git:</strong> sin commit; solo <code>_fix/</code> está versionado.</li>
     </ul>
 
     <h4>Pendientes</h4>
     <ul>
-      <li>Confirmar el login en phpMyAdmin tras la ACL; si falla, revisar los logs de Apache.</li>
       <li>Endurecer el datadir a <code>711</code> con <code>sudo</code> (opcional; no bloquea el acceso).</li>
+      <li>Validar manualmente la interfaz de casos y la carga de documentos con datos sintéticos desde el navegador.</li>
       <li>Respaldo externo: diferido, sin fecha; definir proceso, herramienta y destino con IT/cliente.</li>
-      <li>Pendientes de fases posteriores: Tesseract, <code>nomic-embed-text</code>, Playwright/Chromium, Qwen, Excel y retención legal.</li>
+      <li>Pendientes de fases posteriores: Tesseract, <code>nomic-embed-text</code>, Playwright/Chromium, Qwen, Excel completo de 12 hojas y retención legal.</li>
     </ul>
   </section>
 </main>

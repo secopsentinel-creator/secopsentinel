@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}{{ case.nunc }} · secopsentinel{% endblock %}
+{% block content %}
+<section class="card case-header">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Noticia criminal</p>
+      <h1>{{ case.nunc }}</h1>
+      <p class="muted">
+        OT {{ case.ot or '—' }} · OPJ {{ case.opj or '—' }} · SPOA {{ case.spoa or '—' }}
+      </p>
+    </div>
+    <div class="actions">
+      <a class="button-link ghost-link" href="/cases/{{ case.id }}/edit">Editar</a>
+      <a class="ghost-link" href="/cases">Volver a casos</a>
+    </div>
+  </div>
+  <div class="badges">
+    <span class="badge badge-{{ case.status }}">{{ status_labels.get(case.status, case.status) }}</span>
+    <span class="badge priority-{{ case.priority }}">Prioridad {{ priority_labels.get(case.priority, case.priority) }}</span>
+    {% if case.due_date %}
+    <span class="badge">Vence {{ case.due_date.strftime('%d/%m/%Y') }}</span>
+    {% endif %}
+  </div>
+</section>
+
+{% if created %}<div class="success" role="status">Caso creado correctamente.</div>{% endif %}
+{% if updated %}<div class="success" role="status">Cambios guardados.</div>{% endif %}
+{% if uploaded %}<div class="success" role="status">Documento cargado y vinculado al expediente.</div>{% endif %}
+{% if activity_created %}<div class="success" role="status">Actividad registrada.</div>{% endif %}
+{% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+
+<section class="card" id="case-tabs">
+  <nav class="tabs">
+    <a class="tab {% if active_tab == 'resumen' %}active{% endif %}"
+       href="/cases/{{ case.id }}?tab=resumen"
+       hx-get="/cases/{{ case.id }}?tab=resumen" hx-target="#case-tabs" hx-select="#case-tabs"
+       hx-swap="outerHTML" hx-push-url="true">Resumen</a>
+    <a class="tab {% if active_tab == 'documentos' %}active{% endif %}"
+       href="/cases/{{ case.id }}?tab=documentos"
+       hx-get="/cases/{{ case.id }}?tab=documentos" hx-target="#case-tabs" hx-select="#case-tabs"
+       hx-swap="outerHTML" hx-push-url="true">Documentos ({{ case.document_links|length }})</a>
+    <a class="tab {% if active_tab == 'actividades' %}active{% endif %}"
+       href="/cases/{{ case.id }}?tab=actividades"
+       hx-get="/cases/{{ case.id }}?tab=actividades" hx-target="#case-tabs" hx-select="#case-tabs"
+       hx-swap="outerHTML" hx-push-url="true">Actividades ({{ case.activities|length }})</a>
+  </nav>
+
+  {% if active_tab == 'resumen' %}
+  <div class="tab-panel">
+    <div class="detail-grid">
+      <div><span class="label">Fiscalía</span><span>{{ case.prosecutor_office or '—' }}</span></div>
+      <div><span class="label">Despacho</span><span>{{ case.office_number or '—' }}</span></div>
+      <div><span class="label">Fiscal</span><span>{{ case.prosecutor_name or '—' }}</span></div>
+      <div><span class="label">Correo</span><span>{{ case.prosecutor_email or '—' }}</span></div>
+      <div><span class="label">Teléfono</span><span>{{ case.prosecutor_phone or '—' }}</span></div>
+      <div><span class="label">Investigador</span><span>{{ case.investigator_name or '—' }}</span></div>
+      <div><span class="label">Grupo CTI</span><span>{{ case.cti_group or '—' }}</span></div>
+      <div><span class="label">Estado de gestión</span><span>{{ case.management_status or '—' }}</span></div>
+      <div><span class="label">Delito</span><span>{{ case.crime or '—' }}</span></div>
+      <div><span class="label">Artículo</span><span>{{ case.article or '—' }}</span></div>
+      <div><span class="label">Municipio</span><span>{{ case.municipality or '—' }}</span></div>
+      <div><span class="label">Departamento</span><span>{{ case.department or '—' }}</span></div>
+      <div><span class="label">Asignación</span><span>{{ case.assignment_date.strftime('%d/%m/%Y') }}</span></div>
+      <div><span class="label">Vencimiento</span><span>{{ case.due_date.strftime('%d/%m/%Y') if case.due_date else '—' }}</span></div>
+    </div>
+    <p class="muted">Los archivos viven fuera de <code>htdocs</code> y el expediente mantiene un <code>_manifest.json</code> con hashes y rutas relativas.</p>
+  </div>
+  {% elif active_tab == 'documentos' %}
+  <div class="tab-panel">
+    <form method="post" action="/cases/{{ case.id }}/documents" enctype="multipart/form-data" class="form upload-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="grid">
+        <div class="field">
+          <label for="category">Categoría</label>
+          <select id="category" name="category">
+            {% for key, label in categories.items() %}
+            <option value="{{ key }}" {% if selected_category == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="file">Archivo (PDF, DOCX o XLSX)</label>
+          <input id="file" name="file" type="file" accept=".pdf,.docx,.xlsx" required>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Cargar documento</button>
+      </div>
+    </form>
+
+    {% if case.document_links %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Categoría</th><th>Archivo</th><th>Tamaño</th><th>SHA-256</th><th>Vinculado</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for link in case.document_links %}
+          <tr>
+            <td>{{ categories.get(link.category, link.category) }}</td>
+            <td>{{ link.document.original_name }}</td>
+            <td>{{ (link.document.size_bytes / 1024) | round(1) }} KB</td>
+            <td><code title="{{ link.document.sha256 }}">{{ link.document.sha256[:16] }}…</code></td>
+            <td>{{ link.linked_at.strftime('%d/%m/%Y %H:%M') if link.linked_at else '—' }}</td>
+            <td><a href="/cases/{{ case.id }}/documents/{{ link.document.id }}">Descargar</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">Aún no hay documentos vinculados. Cargue la denuncia o la OPJ para iniciar el expediente.</p>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="tab-panel">
+    <form method="post" action="/cases/{{ case.id }}/activities" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="grid">
+        <div class="field">
+          <label for="activity">Actividad *</label>
+          <input id="activity" name="activity" maxlength="500" required>
+        </div>
+        <div class="field">
+          <label for="activity_date">Fecha *</label>
+          <input id="activity_date" name="activity_date" type="date" value="{{ today.isoformat() }}" required>
+        </div>
+        <div class="field">
+          <label for="activity_status">Estado</label>
+          <select id="activity_status" name="status">
+            {% for key, label in activity_status_labels.items() %}
+            <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="notes">Notas</label>
+        <textarea id="notes" name="notes" rows="3" maxlength="5000"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Registrar actividad</button>
+      </div>
+    </form>
+
+    {% if case.activities %}
+    <ol class="timeline">
+      {% for activity in case.activities %}
+      <li>
+        <div class="timeline-head">
+          <strong>{{ activity.activity }}</strong>
+          <span class="badge">{{ activity_status_labels.get(activity.status, activity.status) }}</span>
+        </div>
+        <span class="muted">{{ activity.activity_date.strftime('%d/%m/%Y') }}</span>
+        {% if activity.notes %}<p>{{ activity.notes }}</p>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="muted">Aún no hay actividades registradas.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Casos · secopsentinel{% endblock %}
+{% block content %}
+<section class="card" id="case-list">
+  <div class="page-heading">
+    <div>
+      <h1>Noticias criminales</h1>
+      <p class="muted">Casos registrados y control de vencimientos.</p>
+    </div>
+    <div class="actions">
+      <a class="button-link ghost-link" href="/cases/export.xlsx">Exportar Excel</a>
+      <a class="button-link" href="/cases/new">Nuevo caso</a>
+    </div>
+  </div>
+
+  <form class="toolbar" method="get" action="/cases"
+        hx-get="/cases" hx-target="#case-list" hx-select="#case-list"
+        hx-swap="outerHTML" hx-push-url="true"
+        hx-trigger="keyup changed delay:350ms from:input[name=q], search from:input[name=q]">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por NUNC, OT, OPJ, fiscal o investigador">
+    <button type="submit">Buscar</button>
+  </form>
+
+  {% if cases %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>NUNC</th>
+          <th>OT / OPJ</th>
+          <th>Fiscal / despacho</th>
+          <th>Asignación</th>
+          <th>Vencimiento</th>
+          <th>Estado</th>
+          <th>Prioridad</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for case in cases %}
+        <tr>
+          <td><a href="/cases/{{ case.id }}"><strong>{{ case.nunc }}</strong></a></td>
+          <td>{{ case.ot or '—' }}{% if case.opj %}<br><span class="muted">OPJ {{ case.opj }}</span>{% endif %}</td>
+          <td>{{ case.prosecutor_name or '—' }}{% if case.office_number %}<br><span class="muted">Despacho {{ case.office_number }}</span>{% endif %}</td>
+          <td>{{ case.assignment_date.strftime('%d/%m/%Y') }}</td>
+          <td>
+            {% if case.due_date %}
+              {{ case.due_date.strftime('%d/%m/%Y') }}
+              {% set days = (case.due_date - today).days %}
+              <br><span class="muted">{{ days }} día(s)</span>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td><span class="badge badge-{{ case.status }}">{{ status_labels.get(case.status, case.status) }}</span></td>
+          <td><span class="badge priority-{{ case.priority }}">{{ priority_labels.get(case.priority, case.priority) }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">No hay casos que coincidan con la búsqueda.</p>
+  {% endif %}
+</section>
+{% endblock %}

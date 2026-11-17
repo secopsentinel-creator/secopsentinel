@@ -21,10 +21,18 @@
 - MariaDB: `secopsentinel_app` solo DML y `secopsentinel_migrate` solo para Alembic; `.env` 600 dentro del LUKS.
 - Datadir de MariaDB trasladado a LUKS (`/opt/lampp/var/mysql` -> `~/.local/share/secopsentinel/mysql`); consulta de la aplicación y `@@datadir` verificados. Copia sin cifrar eliminada.
 - Login de la aplicación verificado con el datadir trasladado y auditoría en `login_attempts` y `audit_log`.
-- phpMyAdmin (Apache, usuario `daemon`) accede al socket con ACL de tránsito; no tiene lectura ni listado del datadir. El endurecimiento del datadir a `711` queda pendiente de `sudo`.
+- phpMyAdmin (Apache, usuario `daemon`) accede al socket con ACL de tránsito y login confirmado; no tiene lectura ni listado del datadir. El endurecimiento del datadir a `711` queda pendiente de `sudo`.
 - XAMPP sin arranque automático; tras reiniciar, desbloquear LUKS y ejecutar `sudo /opt/lampp/lampp start`.
 
+## Fase 1 · Documentos
+- NUNC validado con patrón seguro y rutas resueltas dentro de `CASES_DIR`; se rechaza path traversal.
+- Binarios fuera de `htdocs`, directorios `700` y archivos `600`; la BD guarda ruta relativa, SHA-256, MIME, tamaño y metadatos.
+- Deduplicación por SHA-256: el binario se guarda una vez y se enlaza al expediente con enlace duro.
+- Validación de extensión y firma de contenido (PDF, DOCX, XLSX), límite de tamaño y escaneo con ClamAV.
+- Cuarentena para malware y rechazo cerrado si el antivirus falla; eventos en `security_events` y `audit_log`.
+- Descarga solo autenticada, con auditoría; nunca se expone el almacén por `/static` ni por Apache.
+
 ## Pendientes
-- Confirmar el acceso a phpMyAdmin después de la ACL; si falla, revisar `mysqli.default_socket` y los logs de Apache.
 - Endurecer el datadir a `711` con `sudo` (opcional, no bloquea el acceso).
+- Validar manualmente la interfaz de casos y la carga de documentos con datos sintéticos desde el navegador.
 - Respaldo externo diferido, sin fecha. No se define proceso, herramienta ni destino hasta acordarlo con IT/cliente; restic es solo una recomendación.
