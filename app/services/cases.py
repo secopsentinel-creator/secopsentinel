@@ -32,6 +32,7 @@ ACTIVITY_STATUS_LABELS = {
 }
 
 CATEGORY_FOLDERS = {
+    "documento_recibido": "Documento recibido",
     "denuncia": "Denuncia",
     "opj": "OPJ",
     "programa_metodologico": "Programa metodológico",

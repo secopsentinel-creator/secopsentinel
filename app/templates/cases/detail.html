@@ -20,6 +20,8 @@
     <span class="badge priority-{{ case.priority }}">Prioridad {{ priority_labels.get(case.priority, case.priority) }}</span>
     {% if case.due_date %}
     <span class="badge">Vence {{ case.due_date.strftime('%d/%m/%Y') }}</span>
+    {% else %}
+    <span class="badge term-pending">Término pendiente</span>
     {% endif %}
   </div>
 </section>

@@ -10,7 +10,7 @@ from openpyxl import load_workbook
 from sqlalchemy import func, select
 
 from app.models import AuditLog, Case, CaseDocument, Document, SecurityEvent
-from app.services import documents
+from app.services import documents, pdf_intake
 from app.services.cases import document_link_name
 from app.services.documents import ScanResult
 
@@ -142,6 +142,102 @@ def test_case_rejects_due_before_assignment(auth_client, db_session):
     assert response.status_code == 400
     assert "vencimiento" in response.text.lower()
     assert db_session.scalar(select(func.count()).select_from(Case)) == 0
+
+
+def test_missing_due_date_is_visible_as_pending(auth_client, db_session):
+    response = create_case(auth_client, due_date="")
+    assert response.status_code == 303
+
+    case = db_session.scalar(select(Case).where(Case.nunc == "NUNC-001"))
+    assert case is not None
+    assert case.due_date is None
+    assert "Término pendiente" in auth_client.get(f"/cases/{case.id}").text
+    assert "Término pendiente" in auth_client.get("/cases").text
+    dashboard = auth_client.get("/").text
+    assert "Términos pendientes" in dashboard
+
+
+def test_pdf_intake_prefills_case_and_attaches_source_pdf(auth_client, db_session, monkeypatch):
+    clean_scan(monkeypatch)
+    monkeypatch.setattr(
+        pdf_intake,
+        "extract_text_pages",
+        lambda path: [
+            "NUNC: NUNC-PDF-001\n"
+            "OT: OT-901\n"
+            "OPJ: OPJ-225\n"
+            "SPOA: SPOA-88\n"
+            "Fecha de asignación: 16/11/2026\n"
+            "Fiscal asignado: Fiscal de prueba"
+        ],
+    )
+    csrf = csrf_from(auth_client.get("/cases/new").text)
+    preview = auth_client.post(
+        "/cases/intake/preview",
+        data={"csrf_token": csrf},
+        files={"file": ("asignacion.pdf", PDF_BYTES, "application/pdf")},
+    )
+
+    assert preview.status_code == 200
+    assert 'value="NUNC-PDF-001"' in preview.text
+    assert 'value="2026-11-16"' in preview.text
+    assert "Término pendiente" in preview.text
+    token_match = re.search(r'name="intake_token" value="([^"]+)"', preview.text)
+    assert token_match is not None
+
+    values = case_data(
+        "NUNC-PDF-001",
+        ot="OT-901",
+        opj="OPJ-225",
+        spoa="SPOA-88",
+        assignment_date="2026-11-16",
+        due_date="",
+        prosecutor_name="Fiscal de prueba",
+    )
+    values.update({"csrf_token": csrf, "intake_token": token_match.group(1)})
+    created = auth_client.post("/cases", data=values, follow_redirects=False)
+
+    assert created.status_code == 303
+    case = db_session.scalar(select(Case).where(Case.nunc == "NUNC-PDF-001"))
+    assert case is not None
+    assert case.due_date is None
+    document = db_session.scalar(select(Document))
+    link = db_session.scalar(select(CaseDocument))
+    assert document is not None
+    assert document.original_name == "asignacion.pdf"
+    assert link is not None
+    assert link.case_id == case.id
+    assert link.category == "documento_recibido"
+    assert (Path(os.environ["CASES_DIR"]) / case.nunc / "Documento recibido").is_dir()
+
+
+def test_pdf_without_text_allows_manual_entry_and_pending_term(
+    auth_client, db_session, monkeypatch
+):
+    clean_scan(monkeypatch)
+    monkeypatch.setattr(pdf_intake, "extract_text_pages", lambda path: [])
+    csrf = csrf_from(auth_client.get("/cases/new").text)
+    preview = auth_client.post(
+        "/cases/intake/preview",
+        data={"csrf_token": csrf},
+        files={"file": ("escaneado.pdf", PDF_BYTES, "application/pdf")},
+    )
+
+    assert preview.status_code == 200
+    assert "No se pudo extraer texto" in preview.text
+    token_match = re.search(r'name="intake_token" value="([^"]+)"', preview.text)
+    assert token_match is not None
+
+    values = case_data("NUNC-MANUAL-PDF", due_date="")
+    values.update({"csrf_token": csrf, "intake_token": token_match.group(1)})
+    created = auth_client.post("/cases", data=values, follow_redirects=False)
+
+    assert created.status_code == 303
+    case = db_session.scalar(select(Case).where(Case.nunc == "NUNC-MANUAL-PDF"))
+    assert case is not None and case.due_date is None
+    assert "Término pendiente" in auth_client.get(created.headers["location"]).text
+    document = db_session.scalar(select(Document))
+    assert document is not None and document.original_name == "escaneado.pdf"
 
 
 def test_document_upload_hashes_hardlinks_and_manifest(auth_client, db_session, monkeypatch):

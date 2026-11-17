@@ -1,27 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Panel · secopsentinel{% endblock %}
 {% block content %}
-<section class="card">
+<section class="card dashboard-hero">
   <div class="page-heading">
     <div>
       <h1>Panel</h1>
-      <p class="muted">Usuario: <strong>{{ user.username }}</strong> · Rol: <strong>{{ user.role }}</strong></p>
+      <p class="muted">Usuario: <strong>{{ user.username }}</strong> · Rol: <strong>{{ user.role }}</strong> · Profesional: <strong>Mauricio Sandoval</strong></p>
     </div>
     <a class="button-link" href="/cases/new">Nuevo caso</a>
   </div>
 
   <div class="stats">
-    <article class="stat">
+    <article class="stat stat-primary">
       <span class="stat-value">{{ case_count }}</span>
       <span class="stat-label">Casos registrados</span>
     </article>
-    <article class="stat">
+    <article class="stat stat-warning">
       <span class="stat-value">{{ due_soon_count }}</span>
       <span class="stat-label">Vencen en 7 días</span>
     </article>
-    <article class="stat">
+    <article class="stat stat-date">
       <span class="stat-value">{{ today.strftime('%d/%m/%Y') }}</span>
       <span class="stat-label">Fecha de control</span>
+    </article>
+    <article class="stat stat-pending">
+      <span class="stat-value">{{ term_pending_count }}</span>
+      <span class="stat-label">Términos pendientes</span>
     </article>
   </div>
 </section>

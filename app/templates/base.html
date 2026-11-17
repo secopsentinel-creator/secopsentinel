@@ -6,22 +6,30 @@
   <title>{% block title %}secopsentinel{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
   <script src="{{ url_for('static', path='js/htmx.min.js') }}" defer></script>
+  <script src="{{ url_for('static', path='js/file-picker.js') }}" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
-      <strong>secopsentinel</strong>
-      <span>Investigación judicial y contratación estatal</span>
-    </div>
+    <a class="brand" href="/" aria-label="secopsentinel, ir al panel">
+      <img class="brand-logo" src="{{ url_for('static', path='secopsentinel-logo.svg') }}" alt="" aria-hidden="true">
+      <span class="brand-copy">
+        <strong>secopsentinel</strong>
+        <span>Investigación judicial y contratación estatal</span>
+      </span>
+    </a>
     {% block nav %}
     {% if user is defined and user %}
     <nav class="nav">
-      <a href="/">Panel</a>
-      <a href="/cases">Casos</a>
-      <a href="/cases/new">Nuevo caso</a>
+      <a href="/" {% if request.url.path == "/" %}aria-current="page"{% endif %}>Panel</a>
+      <a href="/cases" {% if request.url.path == "/cases" or request.url.path.startswith("/cases/") and request.url.path != "/cases/new" %}aria-current="page"{% endif %}>Casos</a>
+      <a href="/cases/new" {% if request.url.path == "/cases/new" %}aria-current="page"{% endif %}>Nuevo caso</a>
       <form method="post" action="/logout" class="logout-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" class="ghost">Salir</button>
+        <button type="submit" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5M14 16l4-4-4-4m4 4H9" />
+          </svg>
+        </button>
       </form>
     </nav>
     {% endif %}
@@ -31,7 +39,8 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="footer">
-    Ejecución local. Datos judiciales fuera del docroot.
+    Ejecución local. Datos judiciales fuera del docroot. · Desarrollado por
+    <a href="mailto:alejandro.montenegro@outlook.com">alejo_fix</a>
   </footer>
 </body>
 </html>

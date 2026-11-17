@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from datetime import date
 from typing import Annotated
 
@@ -22,6 +23,7 @@ from app.services.cases import (
     CaseServiceError,
     DuplicateCaseError,
     add_activity,
+    case_directory,
     case_form_values,
     case_snapshot,
     create_case,
@@ -36,6 +38,15 @@ from app.services.documents import (
     save_document,
 )
 from app.services.excel import build_cases_workbook
+from app.services.pdf_intake import (
+    FIELD_LABELS,
+    IntakeDraft,
+    PdfIntakeError,
+    discard_intake_draft,
+    inspect_intake_draft,
+    resolve_intake_draft,
+    stage_pdf_intake,
+)
 
 XLSX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 router = APIRouter(prefix="/cases")
@@ -75,6 +86,7 @@ def _render_case_form(
     errors: dict[str, str] | None = None,
     error: str | None = None,
     case: Case | None = None,
+    pdf_intake: dict | None = None,
     status_code: int = 200,
 ):
     return render_page(
@@ -86,11 +98,25 @@ def _render_case_form(
             "errors": errors or {},
             "error": error,
             "case": case,
+            "pdf_intake": pdf_intake,
+            "field_labels": FIELD_LABELS,
             "status_labels": CASE_STATUS_LABELS,
             "priority_labels": CASE_PRIORITY_LABELS,
         },
         status_code=status_code,
     )
+
+
+def _pdf_intake_view(draft: IntakeDraft, *, extraction=None) -> dict:
+    result = extraction or inspect_intake_draft(draft)
+    return {
+        "token": draft.token,
+        "filename": draft.original_name,
+        "sha256": draft.sha256,
+        "sources": result.sources,
+        "text_found": result.text_found,
+        "field_count": len(result.values),
+    }
 
 
 def _render_case_detail(
@@ -153,6 +179,49 @@ def cases_page(
     )
 
 
+@router.post("/intake/preview")
+async def preview_case_pdf(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_user)],
+    file: Annotated[UploadFile, File(...)],
+    csrf_token: Annotated[str, Form()] = "",
+):
+    values = case_form_values()
+    if not validate_csrf_token(request, csrf_token):
+        return _render_case_form(
+            request,
+            user,
+            values,
+            error="Solicitud inválida. Recargue la página.",
+            status_code=400,
+        )
+
+    values["assignment_date"] = ""
+    try:
+        draft, extraction = await stage_pdf_intake(db, user, file)
+    except PdfIntakeError as exc:
+        db.commit()
+        return _render_case_form(
+            request,
+            user,
+            values,
+            error=str(exc),
+            status_code=400,
+        )
+
+    for field, value in extraction.values.items():
+        values[field] = value
+    intake_view = _pdf_intake_view(draft, extraction=extraction)
+    db.commit()
+    return _render_case_form(
+        request,
+        user,
+        values,
+        pdf_intake=intake_view,
+    )
+
+
 @router.get("/export.xlsx")
 def export_cases(
     db: Annotated[Session, Depends(get_db)],
@@ -207,6 +276,21 @@ async def create_case_page(
             error="Solicitud inválida. Recargue la página.",
             status_code=400,
         )
+    intake_token = str(form_data.get("intake_token", "")).strip()
+    intake_draft = None
+    intake_view = None
+    if intake_token:
+        try:
+            intake_draft = resolve_intake_draft(intake_token)
+            intake_view = _pdf_intake_view(intake_draft)
+        except PdfIntakeError as exc:
+            return _render_case_form(
+                request,
+                user,
+                values,
+                error=str(exc),
+                status_code=400,
+            )
     try:
         form = CaseForm(**values)
     except ValidationError as exc:
@@ -216,20 +300,43 @@ async def create_case_page(
             values,
             errors=_form_errors(exc),
             error="Revise los campos marcados.",
+            pdf_intake=intake_view,
             status_code=400,
         )
+    created_nunc = None
     try:
         case = create_case(db, user, form)
-    except (DuplicateCaseError, CaseServiceError) as exc:
+        created_nunc = case.nunc
+        if intake_draft is not None:
+            with intake_draft.file_path.open("rb") as source_file:
+                upload = UploadFile(filename=intake_draft.original_name, file=source_file)
+                await save_document(db, case, user, upload, "documento_recibido")
+    except (DuplicateCaseError, CaseServiceError, DocumentServiceError) as exc:
         db.rollback()
+        if created_nunc is not None:
+            shutil.rmtree(case_directory(created_nunc), ignore_errors=True)
+        if intake_draft is not None and isinstance(exc, DocumentServiceError):
+            write_security_event(
+                db,
+                event_type="case_pdf_intake_save_failed",
+                severity="error",
+                detail="No se pudo vincular el PDF de origen al caso.",
+            )
+            db.commit()
         return _render_case_form(
             request,
             user,
             values,
             errors={"nunc": str(exc)},
             error=str(exc),
+            pdf_intake=intake_view,
             status_code=400,
         )
+    after = case_snapshot(case)
+    if intake_draft is not None:
+        after["creation_source"] = "pdf"
+        after["source_pdf_sha256"] = intake_draft.sha256
+        after["pdf_fields_detected"] = sorted((intake_view or {}).get("sources", {}))
     write_audit(
         db,
         action="case.create",
@@ -237,9 +344,11 @@ async def create_case_page(
         username=user.username,
         user_id=user.id,
         entity_id=str(case.id),
-        after=case_snapshot(case),
+        after=after,
     )
     db.commit()
+    if intake_draft is not None:
+        discard_intake_draft(intake_draft)
     return RedirectResponse(f"/cases/{case.id}?created=1", status_code=303)
 
 

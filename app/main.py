@@ -66,6 +66,14 @@ def dashboard(
         )
         or 0
     )
+    term_pending_count = int(
+        db.scalar(
+            select(func.count())
+            .select_from(Case)
+            .where(Case.due_date.is_(None), Case.status != "archivado")
+        )
+        or 0
+    )
     recent_cases = list(
         db.scalars(select(Case).order_by(Case.created_at.desc()).limit(5)).all()
     )
@@ -77,6 +85,7 @@ def dashboard(
             "today": today,
             "case_count": case_count,
             "due_soon_count": due_soon_count,
+            "term_pending_count": term_pending_count,
             "recent_cases": recent_cases,
         },
     )

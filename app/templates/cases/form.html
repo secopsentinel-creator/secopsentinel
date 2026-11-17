@@ -14,8 +14,63 @@
   <div class="alert" role="alert">{{ error }}</div>
   {% endif %}
 
+  {% if not case %}
+  <section class="pdf-intake">
+    <div>
+      <h2>Crear desde PDF</h2>
+      <p class="muted">El PDF se analiza localmente. Los datos detectados se proponen para revisión y se pueden corregir antes de guardar.</p>
+    </div>
+    <form method="post" action="/cases/intake/preview" enctype="multipart/form-data" class="pdf-intake-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="intake_pdf">Documento recibido (PDF)</label>
+      <div class="pdf-intake-actions">
+        <div class="file-picker-control">
+          <label class="file-picker-button" for="intake_pdf">
+            <img class="action-icon" src="{{ url_for('static', path='icon-pdf.svg') }}" alt="" aria-hidden="true">
+            <span>Seleccionar PDF</span>
+            <input id="intake_pdf" name="file" type="file" accept=".pdf,application/pdf" required data-filename-target="intake_pdf_name">
+          </label>
+          <span class="file-selection-name" id="intake_pdf_name" aria-live="polite">Ningún archivo seleccionado</span>
+        </div>
+        <button class="icon-action" type="submit">
+          <img class="action-icon" src="{{ url_for('static', path='icon-pdf.svg') }}" alt="" aria-hidden="true">
+          <span>Leer PDF y prellenar</span>
+        </button>
+      </div>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if pdf_intake %}
+  <section class="intake-review" aria-live="polite">
+    <div class="page-heading">
+      <div>
+        <h2>Revisión de lectura</h2>
+        <p class="muted">{{ pdf_intake.filename }} · {{ pdf_intake.field_count }} campo(s) detectado(s). Revise y corrija los valores antes de crear el caso.</p>
+      </div>
+      <span class="badge">El vencimiento no se calcula automáticamente</span>
+    </div>
+    {% if not pdf_intake.text_found %}
+    <p class="intake-warning">No se pudo extraer texto de este PDF. Complete los campos manualmente; el documento se conservará en el expediente.</p>
+    {% elif pdf_intake.field_count == 0 %}
+    <p class="intake-warning">No se reconocieron campos con las etiquetas disponibles. Puede completar el formulario manualmente; el documento se conservará en el expediente.</p>
+    {% endif %}
+    {% if pdf_intake.sources %}
+    <details>
+      <summary>Ver origen de los datos detectados</summary>
+      <ul class="source-list">
+        {% for field, source in pdf_intake.sources.items() %}
+        <li><strong>{{ field_labels.get(field, field) }}</strong> · página {{ source.page }} · <q>{{ source.excerpt }}</q></li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <form method="post" action="{% if case %}/cases/{{ case.id }}/edit{% else %}/cases{% endif %}" class="form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if pdf_intake %}<input type="hidden" name="intake_token" value="{{ pdf_intake.token }}">{% endif %}
 
     <fieldset>
       <legend>Identificación</legend>
@@ -49,6 +104,7 @@
         <div class="field">
           <label for="due_date">Fecha de vencimiento</label>
           <input id="due_date" name="due_date" type="date" value="{{ values.get('due_date', '') }}">
+          <span class="muted">Si no conoce la fecha, el caso quedará como Término pendiente.</span>
           {% if errors.get('due_date') %}<span class="field-error">{{ errors.get('due_date') }}</span>{% endif %}
         </div>
         <div class="field">

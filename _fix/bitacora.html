@@ -163,7 +163,7 @@
 <body>
 <header>
   <h1>Bitácora · Sistema Inteligente de Apoyo a la Investigación Judicial y Contratación Estatal</h1>
-  <p>Documentación técnica y funcional del proyecto · Actualizado el 15 de noviembre de 2026</p>
+  <p>Documentación técnica y funcional del proyecto · Actualizado el 16 de noviembre de 2026</p>
 </header>
 
 <main>
@@ -885,10 +885,10 @@
 
     <h3>Estado verificado del entorno</h3>
     <ul>
-      <li>Repositorio con solo <code>_fix/bitacora.html</code>; remoto GitHub configurado.</li>
-      <li>Python 3.12.3 y pip 26.3. Falta <code>ensurepip</code>: el entorno debe crearse con <code>virtualenv</code> o instalando <code>python3-venv</code>.</li>
+      <li>El último commit de <code>main</code> es <code>9dd5083 codigo servicios</code> y coincide con <code>origin/main</code> al 16 de noviembre de 2026. El árbol de trabajo tiene cambios rastreados y archivos nuevos todavía sin commit.</li>
+      <li>Python 3.12.3. El entorno local <code>.venv</code> ya existe y <code>.venv/bin/python -m pip</code> informa pip 26.3.</li>
       <li>Ollama 0.40.14 activo con <code>gemma4:e4b</code> (visión, herramientas, 131k de contexto). <code>nomic-embed-text</code> está autorizado y pendiente de descarga; <code>qwen2.5:7b-instruct</code> está pendiente de instalar y evaluar.</li>
-      <li>MariaDB 10.4.28 activa por socket Unix. Las credenciales administrativas fueron confirmadas por el usuario; la contraseña se almacenará solo en <code>.env</code> y no se registra en este documento. Se creará un usuario dedicado y se rotará la clave de <code>root</code>.</li>
+      <li>MariaDB 10.4.28 activa por socket Unix. Están creados los usuarios dedicados <code>secopsentinel_app</code> y <code>secopsentinel_migrate</code>; las credenciales se mantienen fuera del repositorio.</li>
       <li>No hay Node, PostgreSQL, Docker, Nginx ni Tesseract. Sí hay <code>pdftotext</code>, LibreOffice y Chromium (snap). La instalación de Tesseract y la descarga de Chromium de Playwright están autorizadas.</li>
       <li>Hardware: 8 núcleos, 15 GB de RAM y 193 GB libres. Suficiente para un modelo de 7.5B en cuantización Q4.</li>
     </ul>
@@ -960,6 +960,36 @@
     </div>
 
     <h3>Fases de ejecución</h3>
+
+    <article class="module phase mvp" id="mejora-visual">
+      <h3>Plan de mejora visual · Inspiración Windows Vista Aero <span class="tag">Implementado · 16 nov 2026</span></h3>
+      <p><strong>Objetivo:</strong> dar más profundidad y jerarquía a la interfaz existente mediante una estética Aero, manteniendo la lectura clara y sin cambiar funciones ni flujos de trabajo.</p>
+      <ol>
+        <li><strong>Identidad visual:</strong> gama azul y turquesa, fondos degradados, superficies tipo vidrio con transparencia moderada, bordes luminosos y sombras suaves.</li>
+        <li><strong>Marco común:</strong> cabecera y navegación con acabado Aero, opción activa diferenciada, contenido con jerarquía y pie de página integrado.</li>
+        <li><strong>Componentes:</strong> tarjetas con profundidad, botones con degradado, tablas con filas alternadas, formularios legibles y etiquetas de estado con color.</li>
+        <li><strong>Pantallas:</strong> aplicar el sistema visual al panel, listado de casos, detalle, formularios e ingreso; selector PDF y exportación Excel con iconos locales y controles tipográficos coherentes. La navegación incluye salida con icono y el ingreso usa el texto simplificado “Acceso local para el investigador”.</li>
+        <li><strong>Restricciones:</strong> CSS y recursos locales; sin Node, CDNs, fuentes remotas ni imágenes externas. Conservar Jinja2, HTMX, autenticación, CSRF y CSP. Incluir alternativa sin desenfoque, foco visible y respeto a <code>prefers-reduced-motion</code>.</li>
+        <li><strong>Verificación:</strong> Ruff sin hallazgos, 27 pruebas aprobadas y recurso SVG servido localmente; revisión manual en escritorio y móvil pendiente.</li>
+      </ol>
+      <p><strong>Marca:</strong> escudo para protección, expediente para investigación y lupa para análisis. El logotipo vectorial local es <code>app/static/secopsentinel-logo.svg</code>.</p>
+      <p><strong>Implementación:</strong> estilos Aero en <code>app/static/css/app.css</code>; <code>app/templates/base.html</code> contiene el logotipo, navegación activa, salida con SVG y crédito del desarrollador en el pie; <code>app/templates/login.html</code> simplifica el texto de acceso. El selector muestra el nombre del archivo con <code>app/static/js/file-picker.js</code>; iconos locales <code>app/static/icon-pdf.svg</code> y <code>app/static/icon-xlsx.svg</code>. El panel se destaca en <code>app/templates/dashboard.html</code>. La mejora no altera rutas ni lógica de negocio.</p>
+    </article>
+
+    <article class="module phase mvp" id="alta-caso-pdf">
+      <h3>Alta de casos manual o desde PDF <span class="tag">Base implementada · Término pendiente</span></h3>
+      <p><strong>Objetivo:</strong> conservar la captura manual y añadir lectura local de PDF para prellenar el alta, con revisión y corrección humana antes de guardar.</p>
+      <ul>
+        <li><strong>Modo manual:</strong> formulario vigente; la fecha de vencimiento puede ingresarse manualmente. Si no se conoce, se guarda como <strong>Término pendiente</strong> y no se bloquea el alta.</li>
+        <li><strong>Modo PDF:</strong> carga local con límite de 50 MB, validación de PDF y ClamAV. Se extrae texto con <code>pdftotext</code> y respaldo de <code>pypdf</code> en subproceso con timeout, límite de 200 páginas, 45 segundos de CPU, 512 MB de memoria y 1 millón de caracteres. Etiquetas reconocidas prellenan campos del caso y fechas. Cada valor detectado muestra página y fragmento para revisión.</li>
+        <li>Los campos prellenados siguen editables. Al confirmar, el PDF original se conserva en el expediente bajo <code>Documento recibido</code>, con hash, permisos privados y auditoría.</li>
+        <li>El PDF temporal se guarda bajo <code>DATA_DIR/tmp/intake</code> con permisos <code>700/600</code> y token firmado de 30 minutos; se elimina al confirmar el caso y los temporales vencidos se limpian al iniciar otra carga de PDF.</li>
+        <li><strong>Vencimiento:</strong> se acepta una fecha explícita del PDF o una ingresada manualmente. Si falta, queda pendiente; no se calcula hasta que el usuario defina la regla. El panel cuenta los casos no archivados sin fecha.</li>
+        <li><strong>Límite actual:</strong> extracción por etiquetas en PDFs con texto seleccionable; no se ha calibrado contra un formato institucional porque no hay PDF de ejemplo desensibilizado. Los PDFs escaneados sin texto se conservan, pero requieren completar los campos manualmente; OCR queda pendiente de instalar/verificar Tesseract.</li>
+        <li><strong>Verificación:</strong> 27 pruebas sintéticas aprobadas y Ruff sin hallazgos; cubren prellenado, revisión, conservación del PDF, término pendiente y límites del extractor. Falta validación manual con PDF desensibilizado en navegador.</li>
+      </ul>
+      <p><strong>Implementación:</strong> <code>app/services/pdf.py</code>, <code>app/services/pdf_intake.py</code>, <code>app/routers/cases.py</code>, <code>app/services/cases.py</code> y formularios/panel/listado/detalle en <code>app/templates/</code> y <code>app/main.py</code>. El alta manual permanece disponible.</p>
+    </article>
 
     <article class="module phase" id="fase0">
       <h3>Fase 0 · Preparación y línea base de seguridad <span class="when">1 a 2 días</span></h3>
@@ -1345,10 +1375,11 @@
       <li><strong>phpMyAdmin:</strong> Apache usa <code>daemon</code>; se añadió ACL de tránsito en <code>/home/maudaemon</code>, <code>~/.local</code> y <code>~/.local/share</code>, el punto de montaje quedó en <code>711</code> y el login fue confirmado. Solo queda endurecer el datadir a <code>711</code> con <code>sudo</code>.</li>
       <li><strong>Fase 1 · Casos y expediente:</strong> migración <code>0002_cases_documents</code> aplicada; CRUD de casos con campos del Módulo 1, carpeta automática por NUNC y <code>_manifest.json</code>. Rutas relativas y validación contra path traversal.</li>
       <li><strong>Documentos:</strong> carga de PDF/DOCX/XLSX con límite de tamaño, validación de firma, SHA-256, deduplicación y enlace duro en la carpeta del caso. Escaneo con ClamAV, cuarentena, permisos <code>700/600</code>, descarga autenticada y auditoría de carga/descarga/rechazo.</li>
-      <li><strong>Panel, actividades y Excel:</strong> panel con conteos y vencimientos, actividades con línea de tiempo y exportación XLSX base (control general y actividades). Interfaz con listado, detalle por pestañas y HTMX.</li>
+      <li><strong>Alta desde PDF y términos:</strong> alta manual preservada; PDF digital prellena los campos reconocidos y se conserva como documento recibido tras confirmación. Vencimiento explícito del PDF o manual; si falta, estado visible <strong>Término pendiente</strong>, sin cálculo automático hasta definir la regla. PDFs escaneados requieren entrada manual mientras OCR esté pendiente.</li>
+      <li><strong>Panel, actividades y Excel:</strong> panel con conteos, vencimientos y casos con término pendiente; actividades con línea de tiempo y exportación XLSX base (control general y actividades). Interfaz con listado, detalle por pestañas y HTMX.</li>
       <li><strong>Respaldos:</strong> diferido, sin fecha. restic es solo recomendación; no se instala ni se define proceso/destino hasta acordarlo con IT/cliente.</li>
-      <li><strong>Calidad:</strong> Ruff sin hallazgos y 20 pruebas aprobadas con datos sintéticos.</li>
-      <li><strong>Git:</strong> sin commit; solo <code>_fix/</code> está versionado.</li>
+      <li><strong>Calidad:</strong> Ruff sin hallazgos y 27 pruebas aprobadas con datos sintéticos.</li>
+      <li><strong>Git:</strong> el último commit de <code>main</code> es <code>9dd5083 codigo servicios</code> y coincide con <code>origin/main</code>. Las mejoras documentadas aquí tienen cambios rastreados y archivos nuevos aún sin commit; por tanto, el estado del árbol de trabajo no está limpio.</li>
     </ul>
 
     <h4>Pendientes</h4>
@@ -1356,7 +1387,7 @@
       <li>Endurecer el datadir a <code>711</code> con <code>sudo</code> (opcional; no bloquea el acceso).</li>
       <li>Validar manualmente la interfaz de casos y la carga de documentos con datos sintéticos desde el navegador.</li>
       <li>Respaldo externo: diferido, sin fecha; definir proceso, herramienta y destino con IT/cliente.</li>
-      <li>Pendientes de fases posteriores: Tesseract, <code>nomic-embed-text</code>, Playwright/Chromium, Qwen, Excel completo de 12 hojas y retención legal.</li>
+      <li>Pendientes de fases posteriores: OCR para PDFs escaneados con Tesseract; calibrar las etiquetas de extracción con un PDF institucional desensibilizado; definir la regla de vencimiento; <code>nomic-embed-text</code>, Playwright/Chromium, Qwen, Excel completo de 12 hojas y retención legal.</li>
     </ul>
   </section>
 </main>

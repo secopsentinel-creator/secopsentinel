@@ -121,7 +121,7 @@ def scan_file(path: Path) -> ScanResult:
     return ScanResult(clean=False, error=output[:500])
 
 
-def _validate_content(path: Path, extension: str) -> None:
+def validate_content(path: Path, extension: str) -> None:
     with path.open("rb") as handle:
         header = handle.read(8)
 
@@ -144,7 +144,7 @@ def _validate_content(path: Path, extension: str) -> None:
         raise UploadValidationError("El contenido del archivo no coincide con su extensión.")
 
 
-async def _write_upload(upload: UploadFile, path: Path, max_bytes: int) -> tuple[int, str]:
+async def write_upload(upload: UploadFile, path: Path, max_bytes: int) -> tuple[int, str]:
     size = 0
     digest = hashlib.sha256()
     with path.open("wb") as output:
@@ -282,7 +282,7 @@ async def save_document(
 
     try:
         try:
-            size, sha256 = await _write_upload(upload, temp_path, max_bytes)
+            size, sha256 = await write_upload(upload, temp_path, max_bytes)
         except UploadValidationError as exc:
             _reject(
                 db,
@@ -297,7 +297,7 @@ async def save_document(
             raise
 
         try:
-            _validate_content(temp_path, extension)
+            validate_content(temp_path, extension)
         except UploadValidationError as exc:
             _reject(
                 db,

@@ -8,7 +8,10 @@
       <p class="muted">Casos registrados y control de vencimientos.</p>
     </div>
     <div class="actions">
-      <a class="button-link ghost-link" href="/cases/export.xlsx">Exportar Excel</a>
+      <a class="button-link ghost-link icon-action" href="/cases/export.xlsx">
+        <img class="action-icon" src="{{ url_for('static', path='icon-xlsx.svg') }}" alt="" aria-hidden="true">
+        <span>Exportar Excel</span>
+      </a>
       <a class="button-link" href="/cases/new">Nuevo caso</a>
     </div>
   </div>
@@ -48,7 +51,7 @@
               {% set days = (case.due_date - today).days %}
               <br><span class="muted">{{ days }} día(s)</span>
             {% else %}
-              —
+              <span class="term-pending">Término pendiente</span>
             {% endif %}
           </td>
           <td><span class="badge badge-{{ case.status }}">{{ status_labels.get(case.status, case.status) }}</span></td>
