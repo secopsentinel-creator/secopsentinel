@@ -3,14 +3,15 @@
 Plataforma local de apoyo a investigación judicial y contratación estatal.
 
 ## Estado
-- Fase 0 completada: LUKS montado con clave de recuperación, firewall activo, Apache en loopback, FTP detenido, Avahi deshabilitado, ClamAV operativo, MariaDB con usuarios DML/migración, login de usuario único y auditoría real verificada.
-- Pendiente: decidir si el datadir de MariaDB se mueve al volumen LUKS y definir respaldos con IT/cliente.
+- Fase 0: línea base completada (LUKS, firewall, Apache en loopback, FTP detenido, Avahi deshabilitado, ClamAV, MariaDB con usuarios DML/migración, login y auditoría verificados).
+- Respaldo externo: diferido, sin fecha; no se define proceso hasta acordarlo con IT/cliente.
+- Herramienta de respaldo recomendada: restic; no se instala hasta definir el proceso y el destino.
 - Fuente de verdad operativa: `_fix/bitacora.html`.
 
 ## Estructura
 - `app/`: aplicación (config, base de datos, autenticación, routers, servicios, plantillas y estáticos).
 - `migrations/`: migraciones Alembic.
-- `scripts/`: arranque, creación de usuario, línea base y verificación de seguridad.
+- `scripts/`: arranque, creación de usuario, línea base, verificación de seguridad y traslado de MariaDB a LUKS.
 - `tests/`: pruebas con SQLite aislado.
 - `_fix/`: bitácora y notas de trabajo.
 
@@ -56,6 +57,22 @@ Alembic usa `DB_MIGRATION_USER` y `DB_MIGRATION_PASSWORD`; la aplicación usa `D
 .venv/bin/python scripts/create_user.py --username maudaemon
 ```
 La contraseña debe tener al menos 12 caracteres. El script no imprime ni almacena la contraseña en el repositorio.
+
+## MariaDB dentro del volumen LUKS
+El datadir está trasladado y verificado: `/opt/lampp/var/mysql` es un enlace a `~/.local/share/secopsentinel/mysql`, dentro del volumen LUKS. La aplicación consulta MariaDB con ese datadir y `@@datadir` responde correctamente. La copia sin cifrar se eliminó.
+
+El procedimiento queda documentado en `scripts/move_mariadb_to_luks.sh`; detiene aplicación y MariaDB, copia y verifica, reemplaza el datadir por el enlace y restaura el original si falla.
+
+phpMyAdmin (Apache, usuario `daemon`) accede al socket mediante ACL de tránsito; no tiene lectura ni listado del datadir. El endurecimiento del datadir a `711` queda pendiente de `sudo` y no bloquea el acceso.
+
+XAMPP ya no arranca solo (`xampp.service` deshabilitado). Tras reiniciar, desbloquear y montar LUKS antes de iniciar XAMPP:
+
+```bash
+sudo /opt/lampp/lampp start
+```
+
+## Respaldos
+Respaldo externo diferido, sin fecha. Herramienta recomendada: restic, pero no se instala ni se define proceso/destino hasta acordarlo con IT/cliente. El USB actual de 3.8 GB solo contiene la cabecera LUKS y no alcanza para el volumen de 50 GB.
 
 ## Ejecución local
 ```bash

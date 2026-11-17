@@ -19,8 +19,12 @@
 - LUKS activo con frase, clave de recuperación y cabecera respaldada en medio externo con checksum.
 - UFW con entrada denegada; Apache solo en `127.0.0.1`; FTP detenido; Avahi deshabilitado; ClamAV operativo.
 - MariaDB: `secopsentinel_app` solo DML y `secopsentinel_migrate` solo para Alembic; `.env` 600 dentro del LUKS.
-- Login real verificado con auditoría en `login_attempts` y `audit_log`.
+- Datadir de MariaDB trasladado a LUKS (`/opt/lampp/var/mysql` -> `~/.local/share/secopsentinel/mysql`); consulta de la aplicación y `@@datadir` verificados. Copia sin cifrar eliminada.
+- Login de la aplicación verificado con el datadir trasladado y auditoría en `login_attempts` y `audit_log`.
+- phpMyAdmin (Apache, usuario `daemon`) accede al socket con ACL de tránsito; no tiene lectura ni listado del datadir. El endurecimiento del datadir a `711` queda pendiente de `sudo`.
+- XAMPP sin arranque automático; tras reiniciar, desbloquear LUKS y ejecutar `sudo /opt/lampp/lampp start`.
 
 ## Pendientes
-- Decidir si el datadir de MariaDB (`/opt/lampp/var/mysql`) se mueve al volumen LUKS antes de cargar expedientes.
-- Definir herramienta de respaldo (restic/borg) y destino externo con IT y cliente (ver `_fix/bitacora.html`).
+- Confirmar el acceso a phpMyAdmin después de la ACL; si falla, revisar `mysqli.default_socket` y los logs de Apache.
+- Endurecer el datadir a `711` con `sudo` (opcional, no bloquea el acceso).
+- Respaldo externo diferido, sin fecha. No se define proceso, herramienta ni destino hasta acordarlo con IT/cliente; restic es solo una recomendación.

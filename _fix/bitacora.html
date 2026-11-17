@@ -765,8 +765,8 @@
 
     <h4>Respaldos</h4>
     <ul>
-      <li><strong>Destino:</strong> segundo equipo con seguridad propia, definido con el área de IT. No se comparten credenciales con la aplicación.</li>
-      <li><strong>Herramienta:</strong> por definir con IT. Opciones: restic o borg con repositorio cifrado; alternativa con <code>rsync</code> + <code>tar</code> + <code>gpg</code> ya disponibles.</li>
+      <li><strong>Destino:</strong> segundo equipo con seguridad propia, pendiente de definir con el área de IT. No se comparten credenciales con la aplicación.</li>
+      <li><strong>Herramienta:</strong> restic recomendada con repositorio cifrado; pendiente de instalar y definir destino. Alternativas: borg o <code>rsync</code> + <code>tar</code> + <code>gpg</code>.</li>
       <li><strong>Contenido:</strong> dump de MariaDB, expedientes, secretos cifrados, configuración y auditoría.</li>
       <li><strong>Frecuencia y metas:</strong> respaldo diario; RPO propuesto de 24 horas y RTO propuesto de 4 horas; retención definida por el usuario cliente.</li>
       <li><strong>Verificación:</strong> restauración trimestral en directorio aislado, validación de SHA-256 y manifiestos.</li>
@@ -1214,19 +1214,25 @@
         <tr>
           <td class="name">Apache</td>
           <td class="ver">2.4.56</td>
-          <td>En ejecución con SSL; escucha en <code>*:80</code> y <code>*:443</code>. Restricción a loopback pendiente.</td>
-          <td><span class="estado parcial">Pendiente</span></td>
+          <td>En ejecución con SSL; escucha solo en <code>127.0.0.1:80</code> y <code>127.0.0.1:443</code>. Restricción aplicada.</td>
+          <td><span class="estado ok">Verificado</span></td>
         </tr>
         <tr>
           <td class="name">FTP</td>
           <td class="ver">—</td>
-          <td>Escucha en <code>*:21</code>. Deshabilitar o restringir a loopback; pendiente.</td>
-          <td><span class="estado parcial">Pendiente</span></td>
+          <td>Servicio detenido; no escucha en <code>:21</code>.</td>
+          <td><span class="estado ok">Verificado</span></td>
         </tr>
         <tr>
           <td class="name">MariaDB / MySQL</td>
           <td class="ver">10.4.28</td>
           <td>Servicio activo; conexión solo por socket Unix (<code>skip-networking</code>), sin puerto 3306 expuesto.</td>
+          <td><span class="estado ok">Verificado</span></td>
+        </tr>
+        <tr>
+          <td class="name">Datadir MariaDB en LUKS</td>
+          <td class="ver">—</td>
+          <td>Trasladado y verificado: <code>/opt/lampp/var/mysql</code> enlaza a <code>~/.local/share/secopsentinel/mysql</code>; la aplicación consulta y <code>@@datadir</code> responde. Copia sin cifrar eliminada. XAMPP sin arranque automático.</td>
           <td><span class="estado ok">Verificado</span></td>
         </tr>
         <tr>
@@ -1280,32 +1286,32 @@
         <tr>
           <td class="name">Cifrado LUKS</td>
           <td class="ver">—</td>
-          <td>Disco raíz ext4 sin LUKS. Se decidió contenedor cifrado para datos y secretos; pendiente de implementar.</td>
-          <td><span class="estado parcial">Pendiente</span></td>
+          <td>Contenedor LUKS de 50 GB activo en <code>~/.local/share/secopsentinel.luks</code>, mapeado y montado; clave de recuperación y cabecera respaldada.</td>
+          <td><span class="estado ok">Verificado</span></td>
         </tr>
         <tr>
           <td class="name">cryptsetup</td>
           <td class="ver">—</td>
-          <td>No instalado. Instalación autorizada el 15 de noviembre de 2026; no ejecutada.</td>
-          <td><span class="estado parcial">Pendiente</span></td>
+          <td>2.7.0; contenedor LUKS creado, abierto y en uso.</td>
+          <td><span class="estado ok">Verificado</span></td>
         </tr>
         <tr>
           <td class="name">ClamAV</td>
-          <td class="ver">—</td>
-          <td>No instalado. Instalación y actualización de firmas autorizadas; no ejecutadas.</td>
-          <td><span class="estado parcial">Pendiente</span></td>
+          <td class="ver">1.5.4</td>
+          <td>Instalado con firmas actualizadas; prueba EICAR detectada.</td>
+          <td><span class="estado ok">Verificado</span></td>
         </tr>
         <tr>
           <td class="name">Respaldo cifrado</td>
           <td class="ver">—</td>
-          <td>Herramienta por definir con IT (restic, borg o <code>rsync</code> + <code>gpg</code>). <code>rsync</code> y <code>gpg</code> disponibles.</td>
-          <td><span class="estado parcial">Pendiente</span></td>
+          <td>restic recomendado; no instalado. Destino externo pendiente; el USB actual de 3.8 GB no alcanza para el volumen de 50 GB.</td>
+          <td><span class="estado parcial">Parcial</span></td>
         </tr>
         <tr>
           <td class="name">Firewall UFW</td>
           <td class="ver">—</td>
-          <td>Instalado; estado y reglas no verificados sin <code>root</code>. Pendiente auditoría con <code>sudo</code>.</td>
-          <td><span class="estado parcial">Pendiente</span></td>
+          <td>Activo; entrada denegada por defecto, loopback permitido y servicios sensibles sin exposición.</td>
+          <td><span class="estado ok">Verificado</span></td>
         </tr>
       </tbody>
     </table>
@@ -1317,11 +1323,36 @@
       <li>Credenciales administrativas de MariaDB: <strong>confirmadas por el usuario</strong>. La contraseña no se registra en este documento ni en el repositorio; se almacenará en <code>.env</code> con permisos 600. Se creará un usuario dedicado y se rotará la clave de <code>root</code>.</li>
       <li>Excel de control actual: <strong>no disponible</strong>; queda pendiente para importación y para definir la plantilla de exportación de las 12 hojas.</li>
       <li>Regla de términos en días hábiles y festivos: <strong>pendiente de definición</strong> antes de la Fase 3.</li>
-      <li>Cifrado: <strong>datos cifrados con contenedor LUKS</strong>; no se reinstala el disco completo. Implementación pendiente.</li>
-      <li><code>cryptsetup</code>, ClamAV y herramienta de respaldo: instalación <strong>autorizada</strong>, pero <strong>no ejecutada</strong>; esta bitácora solo documenta.</li>
-      <li>Respaldos: <strong>segundo equipo con seguridad propia</strong>; herramienta y equipo a definir con el área de IT.</li>
+      <li>Cifrado: <strong>datos cifrados con contenedor LUKS</strong>; no se reinstala el disco completo. Contenedor implementado y en uso.</li>
+      <li><code>cryptsetup</code> y ClamAV: instalados y verificados. Herramienta de respaldo: restic recomendado, pendiente de instalar y configurar.</li>
+      <li>Respaldos: <strong>segundo equipo con seguridad propia</strong>; herramienta recomendada restic y destino externo pendiente con IT/cliente.</li>
       <li>Autenticación: <strong>solo contraseña por ahora</strong>, sin MFA. Acceso <strong>solo local</strong> con auditoría de firewall.</li>
       <li>Retención: <strong>pendiente de definir con el usuario cliente</strong>. Revisión legal: <strong>la asume el usuario</strong>.</li>
+    </ul>
+
+    <h3>Realizados y pendientes (16 de noviembre de 2026)</h3>
+    <p>Esta sección actualiza el estado operativo; las secciones anteriores conservan el plan original.</p>
+    <h4>Realizados y verificados</h4>
+    <ul>
+      <li><strong>LUKS:</strong> contenedor de 50 GB en <code>~/.local/share/secopsentinel.luks</code>, mapper <code>secopsentinel-data</code>, montado en <code>~/.local/share/secopsentinel</code>. Frase, clave de recuperación y cabecera respaldada con checksum en medio externo.</li>
+      <li><strong>Herramientas:</strong> <code>cryptsetup</code> 2.7.0, ClamAV 1.5.4 con firmas actualizadas y EICAR detectado, UFW activo con entrada denegada por defecto.</li>
+      <li><strong>Servicios:</strong> Apache solo en <code>127.0.0.1:80/443</code>; FTP detenido; Avahi deshabilitado; Uvicorn/Ollama/MariaDB solo en loopback o socket Unix.</li>
+      <li><strong>MariaDB:</strong> 10.4.28 con <code>skip-networking</code>; usuarios <code>secopsentinel_app</code> (DML) y <code>secopsentinel_migrate</code> (DDL/DML para Alembic); tablas y login real verificados con auditoría.</li>
+      <li><strong>Secretos:</strong> <code>.env</code> real en <code>~/.local/share/secopsentinel/config/.env</code> con permisos 600; <code>~/.config/secopsentinel</code> enlaza al volumen LUKS.</li>
+      <li><strong>Datadir MariaDB:</strong> trasladado a <code>~/.local/share/secopsentinel/mysql</code>; <code>/opt/lampp/var/mysql</code> es un enlace verificado, la aplicación consulta y <code>@@datadir</code> responde. Copia sin cifrar eliminada. <code>xampp.service</code> deshabilitado; tras reiniciar, desbloquear LUKS y ejecutar <code>sudo /opt/lampp/lampp start</code>.</li>
+      <li><strong>Login de la aplicación:</strong> verificado con el datadir trasladado; Uvicorn responde en <code>127.0.0.1:8000</code>.</li>
+      <li><strong>phpMyAdmin:</strong> Apache usa <code>daemon</code>; se añadió ACL de tránsito en <code>/home/maudaemon</code>, <code>~/.local</code> y <code>~/.local/share</code>, y el punto de montaje quedó en <code>711</code>. Falta confirmar el login en phpMyAdmin y endurecer el datadir a <code>711</code> con <code>sudo</code>.</li>
+      <li><strong>Respaldos:</strong> diferido, sin fecha. restic es solo recomendación; no se instala ni se define proceso/destino hasta acordarlo con IT/cliente.</li>
+      <li><strong>Calidad:</strong> Ruff sin hallazgos y 9 pruebas aprobadas.</li>
+      <li><strong>Git:</strong> sin commit; solo <code>_fix/</code> está versionado.</li>
+    </ul>
+
+    <h4>Pendientes</h4>
+    <ul>
+      <li>Confirmar el login en phpMyAdmin tras la ACL; si falla, revisar los logs de Apache.</li>
+      <li>Endurecer el datadir a <code>711</code> con <code>sudo</code> (opcional; no bloquea el acceso).</li>
+      <li>Respaldo externo: diferido, sin fecha; definir proceso, herramienta y destino con IT/cliente.</li>
+      <li>Pendientes de fases posteriores: Tesseract, <code>nomic-embed-text</code>, Playwright/Chromium, Qwen, Excel y retención legal.</li>
     </ul>
   </section>
 </main>
